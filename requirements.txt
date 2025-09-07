@@ -1,0 +1,37 @@
+# 🐍 python-pro 推荐的Flask技术栈
+# Web框架核心
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-Migrate==4.0.5
+Flask-Login==0.6.2
+Flask-Mail==0.9.1
+Flask-WTF==1.1.1
+WTForms==3.0.1
+
+# 内容处理
+Markdown==3.5.1
+Pygments==2.16.1
+Pillow==10.0.1
+
+# 数据库
+sqlite3  # 内置，SQLite支持
+
+# 开发工具
+Flask-DebugToolbar==0.13.1
+python-dotenv==1.0.0
+
+# 生产部署 (可选)
+gunicorn==21.2.0
+psycopg2-binary==2.9.7  # PostgreSQL适配器 (生产环境用)
+
+# 测试框架
+pytest==7.4.2
+pytest-flask==1.2.0
+coverage==7.3.2
+
+# SEO和性能
+Flask-Sitemap==0.3.0
+Flask-Caching==2.1.0
+
+# 安全
+Flask-Talisman==1.1.0  # 安全头设置

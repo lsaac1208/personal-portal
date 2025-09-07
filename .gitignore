@@ -1,0 +1,82 @@
+# 🔒 Git忽略文件配置
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Flask
+instance/
+.webassets-cache
+
+# 环境变量
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 数据库
+*.db
+*.sqlite3
+
+# 日志文件
+logs/
+*.log
+
+# 上传文件
+app/static/uploads/
+uploads/
+
+# 缓存
+.cache/
+.pytest_cache/
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 部署文件
+*.pid
+*.sock
+
+# 备份文件
+*.bak
+*.backup
+
+# 临时文件
+tmp/
+temp/
