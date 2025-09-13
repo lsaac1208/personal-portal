@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '搜索结果: ' + search_results.query if search_results.query else '站内搜索' }} - 个人门户网站{% endblock %}
+{% block meta_description %}{{ '搜索 "' + search_results.query + '" 的结果，找到 ' + search_results.total|string + ' 条相关内容' if search_results.query else '在个人门户网站中搜索技术文章、项目作品和生活分享' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 0;
+    margin-top: -76px;
+    padding-top: 4rem;
+}
+
+.search-box {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-input {
+    border: none;
+    border-radius: 2rem;
+    padding: 1rem 3rem 1rem 1.5rem;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.search-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    background: var(--primary-color);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+    background: var(--primary-color);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.search-filters {
+    background: #f8f9fa;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.results-meta {
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 2rem;
+}
+
+.search-result {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+}
+
+.search-result:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    border-color: var(--primary-color);
+}
+
+.result-content {
+    padding: 1.5rem;
+}
+
+.result-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.result-title a {
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+}
+
+.result-title a:hover {
+    color: var(--primary-color);
+}
+
+.result-snippet {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.result-meta {
+    font-size: 0.875rem;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.result-score {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.category-filter .badge {
+    padding: 0.5rem 1rem;
+    border-radius: 1.5rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.category-filter .badge:hover,
+.category-filter .badge.active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+
+.sidebar-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+}
+
+.suggestion-item {
+    display: block;
+    padding: 0.75rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-item:hover {
+    background: var(--bg-light);
+    color: var(--primary-color);
+    transform: translateX(5px);
+}
+
+.trending-item {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-primary);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+}
+
+.trending-item:hover {
+    background: var(--bg-light);
+    transform: translateY(-2px);
+}
+
+.trending-item .trending-number {
+    background: var(--primary-color);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+}
+
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag-cloud .tag {
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    color: #666;
+    text-decoration: none;
+    border-radius: 1.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.tag-cloud .tag:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.05);
+}
+
+.no-results {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+}
+
+.no-results i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .search-hero {
+        padding: 2rem 0;
+        padding-top: 3rem;
+    }
+    
+    .search-filters {
+        padding: 1rem;
+    }
+    
+    .result-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Search Hero Section -->
+<section class="search-hero">
+    <div class="container">
+        <div class="search-box">
+            <form method="GET" action="{{ url_for('main.search') }}">
+                <div class="position-relative">
+                    <input type="text" name="q" class="form-control search-input" 
+                           placeholder="搜索内容、标签或关键词..." 
+                           value="{{ search_results.query or '' }}"
+                           autofocus>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Search Filters and Results -->
+<div class="container py-4">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Search Filters -->
+            <div class="search-filters">
+                <form method="GET" action="{{ url_for('main.search') }}">
+                    <input type="hidden" name="q" value="{{ search_results.query or '' }}">
+                    
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">内容分类</label>
+                            <select name="category" class="form-select">
+                                <option value="">全部分类</option>
+                                {% if category_stats %}
+                                    {% for cat in category_stats %}
+                                    <option value="{{ cat.category }}" {{ 'selected' if current_category == cat.category }}>
+                                        {{ cat.category }} ({{ cat.count }})
+                                    </option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="技术" {{ 'selected' if current_category == '技术' }}>技术</option>
+                                    <option value="观察" {{ 'selected' if current_category == '观察' }}>观察</option>
+                                    <option value="生活" {{ 'selected' if current_category == '生活' }}>生活</option>
+                                    <option value="创作" {{ 'selected' if current_category == '创作' }}>创作</option>
+                                    <option value="代码" {{ 'selected' if current_category == '代码' }}>代码</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">排序方式</label>
+                            <select name="sort" class="form-select">
+                                <option value="relevance" {{ 'selected' if current_sort == 'relevance' }}>相关性</option>
+                                <option value="date_desc" {{ 'selected' if current_sort == 'date_desc' }}>最新发布</option>
+                                <option value="date_asc" {{ 'selected' if current_sort == 'date_asc' }}>最早发布</option>
+                                <option value="views_desc" {{ 'selected' if current_sort == 'views_desc' }}>浏览量</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>应用筛选
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Meta -->
+            {% if search_results.query %}
+            <div class="results-meta">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h4 class="mb-1">搜索结果</h4>
+                        <p class="text-muted mb-0">
+                            找到 <strong>{{ search_results.total }}</strong> 条关于 
+                            "<strong>{{ search_results.query }}</strong>" 的结果
+                        </p>
+                    </div>
+                    <div class="text-muted">
+                        第 {{ search_results.page }} 页，共 {{ search_results.total_pages }} 页
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Search Results -->
+            {% if search_results.results %}
+                {% for result in search_results.results %}
+                <article class="search-result">
+                    <div class="result-content">
+                        <h3 class="result-title">
+                            <a href="{{ url_for('content.detail', id=result.content.id) }}">
+                                {{ result.highlight.title if result.highlight and result.highlight.title else result.content.title }}
+                            </a>
+                        </h3>
+                        
+                        <div class="result-snippet">
+                            {% if result.highlight and result.highlight.content %}
+                                {{ result.highlight.content | safe }}
+                            {% elif result.content.summary %}
+                                {{ result.content.summary }}
+                            {% else %}
+                                {{ result.content.content | striptags | truncate(200) }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="result-meta">
+                            <span class="category-badge">
+                                <i class="fas fa-folder me-1"></i>{{ result.content.category }}
+                            </span>
+                            
+                            <span class="publish-date">
+                                <i class="fas fa-calendar me-1"></i>{{ result.content.created_at.strftime('%Y年%m月%d日') }}
+                            </span>
+                            
+                            {% if result.content.view_count %}
+                            <span class="view-count">
+                                <i class="fas fa-eye me-1"></i>{{ result.content.view_count }} 次浏览
+                            </span>
+                            {% endif %}
+                            
+                            {% if result.score %}
+                            <span class="result-score">
+                                匹配度 {{ (result.score * 100) | round(0) }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if result.content.tags %}
+                        <div class="mt-2">
+                            {% for tag in result.content.tags[:5] %}
+                            <a href="{{ url_for('main.search') }}?tag={{ tag.name }}" 
+                               class="badge bg-light text-primary text-decoration-none me-1">
+                                #{{ tag.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if search_results.total_pages > 1 %}
+                <nav aria-label="搜索结果分页" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if search_results.page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.search', q=search_results.query, 
+                                category=current_category, sort=current_sort, page=search_results.page-1) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in range(1, search_results.total_pages + 1) %}
+                            {% if page_num == search_results.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% elif page_num <= search_results.page + 2 and page_num >= search_results.page - 2 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.search', q=search_results.query, 
+                                    category=current_category, sort=current_sort, page=page_num) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if search_results.page < search_results.total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.search', q=search_results.query, 
+                                category=current_category, sort=current_sort, page=search_results.page+1) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% elif search_results.query %}
+                <!-- No Results -->
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <h4>未找到相关内容</h4>
+                    <p>没有找到关于 "{{ search_results.query }}" 的内容，请尝试：</p>
+                    <ul class="list-unstyled">
+                        <li>• 检查输入的关键词是否正确</li>
+                        <li>• 尝试使用更简短的关键词</li>
+                        <li>• 使用相关的标签进行搜索</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Search Suggestions -->
+            {% if suggestions %}
+            <div class="sidebar-section">
+                <h6 class="sidebar-title">
+                    <i class="fas fa-lightbulb"></i>搜索建议
+                </h6>
+                {% for suggestion in suggestions %}
+                <a href="{{ url_for('main.search') }}?q={{ suggestion }}" class="suggestion-item">
+                    <i class="fas fa-search me-2"></i>{{ suggestion }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Related Tags -->
+            {% if related_tags %}
+            <div class="sidebar-section">
+                <h6 class="sidebar-title">
+                    <i class="fas fa-tags"></i>相关标签
+                </h6>
+                <div class="tag-cloud">
+                    {% for tag in related_tags %}
+                    <a href="{{ url_for('main.search') }}?tag={{ tag.name }}" class="tag">
+                        {{ tag.name }} ({{ tag.usage_count }})
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Trending Content -->
+            {% if trending_content %}
+            <div class="sidebar-section">
+                <h6 class="sidebar-title">
+                    <i class="fas fa-fire"></i>热门内容
+                </h6>
+                {% for content in trending_content %}
+                <a href="{{ url_for('content.detail', id=content.id) }}" class="trending-item">
+                    <div class="trending-number">{{ loop.index }}</div>
+                    <div>
+                        <div class="fw-medium">{{ content.title | truncate(30) }}</div>
+                        <small class="text-muted">{{ content.view_count }} 次浏览</small>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Category Stats -->
+            {% if category_stats %}
+            <div class="sidebar-section">
+                <h6 class="sidebar-title">
+                    <i class="fas fa-chart-pie"></i>内容分布
+                </h6>
+                {% for stat in category_stats %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <a href="{{ url_for('main.search') }}?category={{ stat.category }}" 
+                       class="text-decoration-none">{{ stat.category }}</a>
+                    <span class="badge bg-light text-dark">{{ stat.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Quick Search Tips -->
+            <div class="sidebar-section">
+                <h6 class="sidebar-title">
+                    <i class="fas fa-question-circle"></i>搜索技巧
+                </h6>
+                <div class="small text-muted">
+                    <p><strong>精确搜索：</strong>使用双引号搜索完整短语</p>
+                    <p><strong>标签搜索：</strong>使用 # 前缀搜索标签</p>
+                    <p><strong>排除关键词：</strong>使用 - 前缀排除词语</p>
+                    <p><strong>分类搜索：</strong>结合分类筛选获得精准结果</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 搜索框自动完成功能
+    const searchInput = document.querySelector('.search-input');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.closest('form').submit();
+            }
+        });
+        
+        // 高亮搜索结果中的关键词
+        const query = '{{ search_results.query or "" }}';
+        if (query) {
+            highlightSearchTerm(query);
+        }
+    }
+    
+    // 筛选表单自动提交
+    const filterSelects = document.querySelectorAll('.search-filters select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+    });
+    
+    // 平滑滚动到结果
+    if (window.location.search.includes('q=')) {
+        const resultsSection = document.querySelector('.results-meta');
+        if (resultsSection) {
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+});
+
+// 高亮搜索关键词
+function highlightSearchTerm(term) {
+    if (!term || term.length < 2) return;
+    
+    const resultContent = document.querySelectorAll('.result-snippet');
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    
+    resultContent.forEach(element => {
+        if (element.innerHTML.indexOf('<mark>') === -1) { // 避免重复高亮
+            element.innerHTML = element.innerHTML.replace(regex, '<mark class="bg-warning">$1</mark>');
+        }
+    });
+}
+
+// 搜索建议点击跟踪
+document.querySelectorAll('.suggestion-item, .tag').forEach(item => {
+    item.addEventListener('click', function() {
+        // 可以在这里添加搜索行为跟踪
+        console.log('Search suggestion clicked:', this.textContent.trim());
+    });
+});
+</script>
+{% endblock %}

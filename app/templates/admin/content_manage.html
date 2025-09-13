@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}内容管理 - 管理后台{% endblock %}
+{% block meta_description %}个人门户网站内容管理界面，文章创建、编辑、发布统一管理。{% endblock %}
+
+{% block extra_css %}
+<style>
+.content-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.filter-bar {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.content-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.content-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.content-meta {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+.content-tags .badge {
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.status-badge {
+    padding: 0.35em 0.8em;
+    border-radius: 2rem;
+    font-weight: 500;
+}
+
+.action-buttons .btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    margin: 0 0.1rem;
+}
+
+.bulk-actions {
+    background-color: var(--bs-warning);
+    color: var(--bs-dark);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    display: none;
+}
+
+.search-highlight {
+    background-color: #fff3cd;
+    padding: 0.1em 0.2em;
+    border-radius: 0.25rem;
+}
+
+.content-thumbnail {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+
+.stats-row {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.category-filter .btn {
+    border-radius: 2rem;
+    margin: 0.25rem;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .filter-bar {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .content-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .stats-row {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+[data-bs-theme="dark"] .search-highlight {
+    background-color: #d69e2e;
+    color: #1a202c;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="content-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">内容管理</h1>
+                    <p class="mb-0 opacity-90">管理您的文章、创作和技术分享内容</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.content_create') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus me-2"></i>新建文章
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Statistics Row -->
+            <div class="stats-row">
+                <div class="row text-center">
+                    <div class="col-md-2 col-6 mb-2">
+                        <div>
+                            <div class="h5 mb-1 text-primary">{{ stats.total or 0 }}</div>
+                            <small class="text-muted">总文章</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-6 mb-2">
+                        <div>
+                            <div class="h5 mb-1 text-success">{{ stats.published or 0 }}</div>
+                            <small class="text-muted">已发布</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-6 mb-2">
+                        <div>
+                            <div class="h5 mb-1 text-warning">{{ stats.draft or 0 }}</div>
+                            <small class="text-muted">草稿</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-6 mb-2">
+                        <div>
+                            <div class="h5 mb-1 text-info">{{ stats.views or 0 }}</div>
+                            <small class="text-muted">总浏览</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-6 mb-2">
+                        <div>
+                            <div class="h5 mb-1 text-secondary">{{ stats.this_month or 0 }}</div>
+                            <small class="text-muted">本月新增</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-6 mb-2">
+                        <div>
+                            <div class="h5 mb-1 text-dark">{{ stats.featured or 0 }}</div>
+                            <small class="text-muted">精选内容</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter and Search Bar -->
+            <div class="filter-bar">
+                <form method="GET" class="row g-3" id="filterForm">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="搜索标题、内容或标签..." 
+                                   value="{{ request.args.get('search', '') }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="category">
+                            <option value="">所有分类</option>
+                            <option value="技术" {{ 'selected' if request.args.get('category') == '技术' }}>技术分享</option>
+                            <option value="观察" {{ 'selected' if request.args.get('category') == '观察' }}>观察思考</option>
+                            <option value="生活" {{ 'selected' if request.args.get('category') == '生活' }}>生活随笔</option>
+                            <option value="创作" {{ 'selected' if request.args.get('category') == '创作' }}>创意作品</option>
+                            <option value="代码" {{ 'selected' if request.args.get('category') == '代码' }}>代码片段</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="status">
+                            <option value="">所有状态</option>
+                            <option value="已发布" {{ 'selected' if request.args.get('status') == '已发布' }}>已发布</option>
+                            <option value="草稿" {{ 'selected' if request.args.get('status') == '草稿' }}>草稿</option>
+                            <option value="计划" {{ 'selected' if request.args.get('status') == '计划' }}>计划中</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="sort">
+                            <option value="created_desc" {{ 'selected' if request.args.get('sort') == 'created_desc' }}>最新创建</option>
+                            <option value="created_asc" {{ 'selected' if request.args.get('sort') == 'created_asc' }}>最早创建</option>
+                            <option value="updated_desc" {{ 'selected' if request.args.get('sort') == 'updated_desc' }}>最近更新</option>
+                            <option value="views_desc" {{ 'selected' if request.args.get('sort') == 'views_desc' }}>浏览最多</option>
+                            <option value="title_asc" {{ 'selected' if request.args.get('sort') == 'title_asc' }}>标题排序</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="{{ url_for('admin.content_manage') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Bulk Actions Bar (Hidden by default) -->
+            <div class="bulk-actions" id="bulkActions">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold">已选择 <span id="selectedCount">0</span> 项</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success" onclick="bulkAction('publish')">
+                            <i class="fas fa-upload me-1"></i>批量发布
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="bulkAction('draft')">
+                            <i class="fas fa-edit me-1"></i>设为草稿
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="bulkAction('feature')">
+                            <i class="fas fa-star me-1"></i>设为精选
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="bulkAction('delete')">
+                            <i class="fas fa-trash me-1"></i>批量删除
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="clearSelection()">
+                            <i class="fas fa-times me-1"></i>取消选择
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content List -->
+            {% if contents %}
+            <div class="content-list">
+                {% for content in contents %}
+                <div class="content-card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                <div class="form-check">
+                                    <input class="form-check-input content-checkbox" type="checkbox" 
+                                           value="{{ content.id }}" id="content-{{ content.id }}">
+                                    <label class="form-check-label" for="content-{{ content.id }}"></label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                {% if content.featured_image %}
+                                <img src="{{ content.featured_image }}" class="content-thumbnail" alt="缩略图">
+                                {% else %}
+                                <div class="content-thumbnail bg-light d-flex align-items-center justify-content-center">
+                                    <span class="display-6">{{ get_category_emoji(content.category) }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <h5 class="card-title mb-1">
+                                        <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                           class="text-decoration-none" target="_blank">
+                                            {{ content.title | highlight_search(request.args.get('search', '')) | safe }}
+                                        </a>
+                                        {% if content.is_featured %}
+                                        <span class="badge bg-warning text-dark ms-1">
+                                            <i class="fas fa-star"></i> 精选
+                                        </span>
+                                        {% endif %}
+                                    </h5>
+                                    <p class="card-text text-muted mb-2">
+                                        {{ content.summary | striptags | truncate(100) | highlight_search(request.args.get('search', '')) | safe }}
+                                    </p>
+                                </div>
+                                
+                                <div class="content-meta d-flex flex-wrap gap-3">
+                                    <span>
+                                        <i class="fas fa-folder me-1"></i>{{ content.category }}
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-eye me-1"></i>{{ content.views or 0 }} 次浏览
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-calendar me-1"></i>{{ moment(content.created_at).format('MM-DD HH:mm') }}
+                                    </span>
+                                    {% if content.updated_at != content.created_at %}
+                                    <span>
+                                        <i class="fas fa-edit me-1"></i>{{ moment(content.updated_at).fromNow() }}更新
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if content.tags %}
+                                <div class="content-tags mt-2">
+                                    {% for tag in content.tags[:5] %}
+                                    <span class="badge bg-light text-primary">
+                                        #{{ tag.name }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-2 text-center">
+                                <span class="status-badge bg-{{ 'success' if content.status == '已发布' else 'warning' if content.status == '草稿' else 'secondary' }}">
+                                    {{ content.status }}
+                                </span>
+                            </div>
+                            
+                            <div class="col-md-1">
+                                <div class="action-buttons">
+                                    <div class="btn-group-vertical" role="group">
+                                        <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="查看" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin.content_edit', id=content.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary" title="编辑">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="duplicateContent({{ content.id }})" title="复制">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteContent({{ content.id }}, '{{ content.title }}')" title="删除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="内容分页" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.content_manage', page=pagination.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.content_manage', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.content_manage', page=pagination.next_num, **request.args) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">
+                    {% if request.args.get('search') or request.args.get('category') or request.args.get('status') %}
+                    没有找到符合条件的内容
+                    {% else %}
+                    还没有任何内容
+                    {% endif %}
+                </h4>
+                <p class="text-muted mb-4">
+                    {% if request.args.get('search') or request.args.get('category') or request.args.get('status') %}
+                    尝试调整搜索条件或筛选器
+                    {% else %}
+                    开始创建您的第一篇文章
+                    {% endif %}
+                </p>
+                
+                {% if request.args.get('search') or request.args.get('category') or request.args.get('status') %}
+                <a href="{{ url_for('admin.content_manage') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-times me-2"></i>清除筛选
+                </a>
+                {% endif %}
+                
+                <a href="{{ url_for('admin.content_create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>创建文章
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Checkbox selection handling
+    const checkboxes = document.querySelectorAll('.content-checkbox');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    // Handle individual checkbox changes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+    
+    // Master checkbox (select all)
+    const masterCheckbox = document.getElementById('masterCheckbox');
+    if (masterCheckbox) {
+        masterCheckbox.addEventListener('change', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActions();
+        });
+    }
+    
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('.content-checkbox:checked');
+        const count = selected.length;
+        
+        if (count > 0) {
+            bulkActions.style.display = 'block';
+            selectedCount.textContent = count;
+        } else {
+            bulkActions.style.display = 'none';
+        }
+    }
+    
+    // Auto-submit filter form on select changes
+    const selects = document.querySelectorAll('#filterForm select');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
+
+// Bulk actions
+function bulkAction(action) {
+    const selected = Array.from(document.querySelectorAll('.content-checkbox:checked'))
+                          .map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        alert('请先选择要操作的内容');
+        return;
+    }
+    
+    const actions = {
+        publish: '发布',
+        draft: '设为草稿',
+        feature: '设为精选',
+        delete: '删除'
+    };
+    
+    const actionName = actions[action];
+    
+    if (action === 'delete') {
+        if (!confirm(`确定要删除选中的 ${selected.length} 项内容吗？此操作无法撤销。`)) {
+            return;
+        }
+    } else {
+        if (!confirm(`确定要${actionName}选中的 ${selected.length} 项内容吗？`)) {
+            return;
+        }
+    }
+    
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/content/bulk-${action}`;
+    
+    selected.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'content_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    // Add CSRF token if available
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (csrfToken) {
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'csrf_token';
+        tokenInput.value = csrfToken.getAttribute('content');
+        form.appendChild(tokenInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.content-checkbox:checked').forEach(cb => {
+        cb.checked = false;
+    });
+    document.getElementById('bulkActions').style.display = 'none';
+}
+
+// Individual content actions
+function deleteContent(contentId, title) {
+    if (confirm(`确定要删除"${title}"吗？此操作无法撤销。`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/content/${contentId}/delete`;
+        
+        // Add CSRF token if available
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'csrf_token';
+            tokenInput.value = csrfToken.getAttribute('content');
+            form.appendChild(tokenInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function duplicateContent(contentId) {
+    if (confirm('确定要复制这篇内容吗？将创建一个副本。')) {
+        window.location.href = `/admin/content/${contentId}/duplicate`;
+    }
+}
+
+// Real-time search
+let searchTimeout;
+const searchInput = document.querySelector('input[name="search"]');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                document.getElementById('filterForm').submit();
+            }
+        }, 500);
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + K for search focus
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+    }
+    
+    // Ctrl/Cmd + N for new content
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = '{{ url_for("admin.content_create") }}';
+    }
+    
+    // Ctrl/Cmd + A for select all
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        document.querySelectorAll('.content-checkbox').forEach(cb => {
+            cb.checked = true;
+        });
+        updateBulkActions();
+    }
+});
+
+// Add keyboard shortcut hints
+document.addEventListener('DOMContentLoaded', function() {
+    const shortcutHint = document.createElement('div');
+    shortcutHint.className = 'text-muted small mt-3 text-center';
+    shortcutHint.innerHTML = `
+        <i class="fas fa-keyboard me-1"></i>快捷键：
+        <kbd>Ctrl+K</kbd> 搜索 |
+        <kbd>Ctrl+N</kbd> 新建 |
+        <kbd>Ctrl+A</kbd> 全选
+    `;
+    document.querySelector('.card-body').appendChild(shortcutHint);
+});
+</script>
+{% endblock %}

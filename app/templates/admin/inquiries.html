@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+
+{% block title %}咨询管理 - 管理后台{% endblock %}
+{% block meta_description %}个人门户网站咨询管理界面，客户询问统一管理和回复系统。{% endblock %}
+
+{% block extra_css %}
+<style>
+.inquiry-header {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.inquiry-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.inquiry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.inquiry-card.unread {
+    border-left: 4px solid var(--bs-primary);
+}
+
+.inquiry-card.urgent {
+    border-left: 4px solid var(--bs-danger);
+}
+
+.priority-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    border-radius: 2rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.inquiry-meta {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+.inquiry-type-badge {
+    padding: 0.35em 0.8em;
+    border-radius: 2rem;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.contact-info {
+    background-color: var(--bs-light);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.reply-form {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    display: none;
+}
+
+.stats-grid {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-bar {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.inquiry-actions .btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    margin: 0 0.1rem;
+}
+
+.timeline-item {
+    border-left: 2px solid var(--bs-light);
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 0.5rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+}
+
+.attachment-list .attachment-item {
+    background-color: var(--bs-light);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .inquiry-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .contact-info,
+[data-bs-theme="dark"] .reply-form,
+[data-bs-theme="dark"] .filter-bar,
+[data-bs-theme="dark"] .attachment-item {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .stats-grid {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+@media (max-width: 768px) {
+    .inquiry-card .row {
+        --bs-gutter-x: 1rem;
+    }
+    
+    .priority-badge {
+        position: static;
+        margin-bottom: 0.5rem;
+    }
+    
+    .inquiry-actions {
+        text-align: center;
+        margin-top: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="inquiry-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">咨询管理</h1>
+                    <p class="mb-0 opacity-90">管理客户询问和业务咨询</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-light" id="refreshInquiries">
+                        <i class="fas fa-sync-alt me-2"></i>刷新
+                    </button>
+                    <button class="btn btn-outline-light" onclick="exportInquiries()">
+                        <i class="fas fa-download me-2"></i>导出
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <div class="row text-center">
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-primary">{{ stats.total or 0 }}</div>
+                            <small class="text-muted">总咨询</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-danger">{{ stats.pending or 0 }}</div>
+                            <small class="text-muted">待处理</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-warning">{{ stats.in_progress or 0 }}</div>
+                            <small class="text-muted">处理中</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-success">{{ stats.completed or 0 }}</div>
+                            <small class="text-muted">已完成</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-info">{{ stats.this_week or 0 }}</div>
+                            <small class="text-muted">本周新增</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-secondary">{{ stats.urgent or 0 }}</div>
+                            <small class="text-muted">紧急处理</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <form method="GET" class="row g-3" id="filterForm">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="搜索姓名、邮箱或内容..." 
+                                   value="{{ request.args.get('search', '') }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="inquiry_type">
+                            <option value="">所有类型</option>
+                            <option value="项目开发" {{ 'selected' if request.args.get('inquiry_type') == '项目开发' }}>项目开发</option>
+                            <option value="技术咨询" {{ 'selected' if request.args.get('inquiry_type') == '技术咨询' }}>技术咨询</option>
+                            <option value="合作洽谈" {{ 'selected' if request.args.get('inquiry_type') == '合作洽谈' }}>合作洽谈</option>
+                            <option value="技术支持" {{ 'selected' if request.args.get('inquiry_type') == '技术支持' }}>技术支持</option>
+                            <option value="其他咨询" {{ 'selected' if request.args.get('inquiry_type') == '其他咨询' }}>其他咨询</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="status">
+                            <option value="">所有状态</option>
+                            <option value="待处理" {{ 'selected' if request.args.get('status') == '待处理' }}>待处理</option>
+                            <option value="处理中" {{ 'selected' if request.args.get('status') == '处理中' }}>处理中</option>
+                            <option value="已回复" {{ 'selected' if request.args.get('status') == '已回复' }}>已回复</option>
+                            <option value="已完成" {{ 'selected' if request.args.get('status') == '已完成' }}>已完成</option>
+                            <option value="已关闭" {{ 'selected' if request.args.get('status') == '已关闭' }}>已关闭</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="priority">
+                            <option value="">所有优先级</option>
+                            <option value="低" {{ 'selected' if request.args.get('priority') == '低' }}>低</option>
+                            <option value="普通" {{ 'selected' if request.args.get('priority') == '普通' }}>普通</option>
+                            <option value="高" {{ 'selected' if request.args.get('priority') == '高' }}>高</option>
+                            <option value="紧急" {{ 'selected' if request.args.get('priority') == '紧急' }}>紧急</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="sort">
+                            <option value="created_desc" {{ 'selected' if request.args.get('sort') == 'created_desc' }}>最新提交</option>
+                            <option value="updated_desc" {{ 'selected' if request.args.get('sort') == 'updated_desc' }}>最近更新</option>
+                            <option value="priority_desc" {{ 'selected' if request.args.get('sort') == 'priority_desc' }}>优先级高</option>
+                            <option value="status_asc" {{ 'selected' if request.args.get('sort') == 'status_asc' }}>状态排序</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="{{ url_for('admin.inquiries') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Inquiries List -->
+            {% if inquiries %}
+            <div class="inquiries-list">
+                {% for inquiry in inquiries %}
+                <div class="inquiry-card {{ 'unread' if not inquiry.is_read else '' }} {{ 'urgent' if inquiry.priority == '紧急' else '' }}">
+                    <!-- Priority Badge -->
+                    {% if inquiry.priority in ['高', '紧急'] %}
+                    <div class="priority-badge bg-{{ 'danger' if inquiry.priority == '紧急' else 'warning' }}">
+                        <i class="fas fa-exclamation-triangle me-1"></i>{{ inquiry.priority }}
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <!-- Inquiry Header -->
+                                <div class="d-flex align-items-start justify-content-between mb-3">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title mb-2">
+                                            {% if not inquiry.is_read %}
+                                            <span class="badge bg-primary me-2">新</span>
+                                            {% endif %}
+                                            {{ inquiry.subject }}
+                                        </h5>
+                                        
+                                        <div class="inquiry-meta d-flex flex-wrap gap-3 mb-2">
+                                            <span>
+                                                <i class="fas fa-user me-1"></i>{{ inquiry.name }}
+                                            </span>
+                                            <span>
+                                                <i class="fas fa-envelope me-1"></i>{{ inquiry.email }}
+                                            </span>
+                                            {% if inquiry.phone %}
+                                            <span>
+                                                <i class="fas fa-phone me-1"></i>{{ inquiry.phone }}
+                                            </span>
+                                            {% endif %}
+                                            {% if inquiry.company %}
+                                            <span>
+                                                <i class="fas fa-building me-1"></i>{{ inquiry.company }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="d-flex flex-wrap gap-2 mb-3">
+                                            <span class="inquiry-type-badge bg-{{ 'primary' if inquiry.inquiry_type == '项目开发' else 'success' if inquiry.inquiry_type == '技术咨询' else 'info' if inquiry.inquiry_type == '合作洽谈' else 'secondary' }}">
+                                                {{ inquiry.inquiry_type }}
+                                            </span>
+                                            {% if inquiry.budget_range %}
+                                            <span class="inquiry-type-badge bg-light text-dark">
+                                                <i class="fas fa-dollar-sign me-1"></i>{{ inquiry.budget_range }}
+                                            </span>
+                                            {% endif %}
+                                            {% if inquiry.timeline %}
+                                            <span class="inquiry-type-badge bg-light text-dark">
+                                                <i class="fas fa-calendar me-1"></i>{{ inquiry.timeline }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Inquiry Content -->
+                                <div class="inquiry-content mb-3">
+                                    <p class="card-text">{{ inquiry.message | truncate(200) }}</p>
+                                    
+                                    {% if inquiry.tech_requirements %}
+                                    <div class="tech-requirements">
+                                        <strong>技术要求：</strong>
+                                        <p class="text-muted small">{{ inquiry.tech_requirements | truncate(100) }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Contact Preferences -->
+                                {% if inquiry.preferred_contact_email or inquiry.preferred_contact_phone or inquiry.preferred_contact_wechat %}
+                                <div class="contact-preferences mb-3">
+                                    <small class="text-muted">首选联系方式：</small>
+                                    {% if inquiry.preferred_contact_email %}
+                                    <span class="badge bg-light text-primary me-1">邮件</span>
+                                    {% endif %}
+                                    {% if inquiry.preferred_contact_phone %}
+                                    <span class="badge bg-light text-success me-1">电话</span>
+                                    {% endif %}
+                                    {% if inquiry.preferred_contact_wechat %}
+                                    <span class="badge bg-light text-success me-1">微信</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Timeline -->
+                                <div class="inquiry-timeline">
+                                    <div class="timeline-item">
+                                        <strong>提交时间:</strong> {{ moment(inquiry.created_at).format('YYYY-MM-DD HH:mm:ss') }}
+                                        <small class="text-muted">({{ moment(inquiry.created_at).fromNow() }})</small>
+                                    </div>
+                                    {% if inquiry.updated_at != inquiry.created_at %}
+                                    <div class="timeline-item">
+                                        <strong>最后更新:</strong> {{ moment(inquiry.updated_at).format('YYYY-MM-DD HH:mm:ss') }}
+                                        <small class="text-muted">({{ moment(inquiry.updated_at).fromNow() }})</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <!-- Status and Actions -->
+                                <div class="text-end mb-3">
+                                    <span class="badge bg-{{ 'danger' if inquiry.status == '待处理' else 'warning' if inquiry.status == '处理中' else 'info' if inquiry.status == '已回复' else 'success' if inquiry.status == '已完成' else 'secondary' }} fs-6">
+                                        {{ inquiry.status }}
+                                    </span>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="inquiry-actions d-grid gap-2">
+                                    {% if inquiry.status == '待处理' %}
+                                    <button class="btn btn-primary" onclick="updateStatus({{ inquiry.id }}, '处理中')">
+                                        <i class="fas fa-play me-2"></i>开始处理
+                                    </button>
+                                    {% endif %}
+                                    
+                                    <button class="btn btn-success" onclick="toggleReplyForm({{ inquiry.id }})">
+                                        <i class="fas fa-reply me-2"></i>回复
+                                    </button>
+                                    
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                                            <i class="fas fa-cog"></i> 更多操作
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="viewFullInquiry({{ inquiry.id }})">
+                                                <i class="fas fa-eye me-2"></i>查看详情
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="markAsRead({{ inquiry.id }})">
+                                                <i class="fas fa-check me-2"></i>标为已读
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="#" onclick="setPriority({{ inquiry.id }}, '高')">
+                                                <i class="fas fa-flag text-warning me-2"></i>设为高优先级
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="setPriority({{ inquiry.id }}, '紧急')">
+                                                <i class="fas fa-exclamation text-danger me-2"></i>设为紧急
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStatus({{ inquiry.id }}, '已完成')">
+                                                <i class="fas fa-check-circle text-success me-2"></i>标为完成
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStatus({{ inquiry.id }}, '已关闭')">
+                                                <i class="fas fa-times-circle text-secondary me-2"></i>关闭咨询
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reply Form -->
+                        <div class="reply-form" id="replyForm-{{ inquiry.id }}">
+                            <h6 class="mb-3">
+                                <i class="fas fa-reply me-2"></i>回复咨询
+                            </h6>
+                            <form onsubmit="sendReply(event, {{ inquiry.id }})">
+                                <div class="mb-3">
+                                    <label class="form-label">回复内容</label>
+                                    <textarea class="form-control" rows="6" required 
+                                              placeholder="请输入您的回复内容..."></textarea>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">回复方式</label>
+                                        <select class="form-select">
+                                            <option value="email">邮件回复</option>
+                                            <option value="phone">电话沟通</option>
+                                            <option value="wechat">微信联系</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">状态更新</label>
+                                        <select class="form-select">
+                                            <option value="已回复">已回复</option>
+                                            <option value="等待回复">等待客户回复</option>
+                                            <option value="已完成">标为完成</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-2"></i>发送回复
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleReplyForm({{ inquiry.id }})">
+                                        <i class="fas fa-times me-2"></i>取消
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="咨询分页" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.inquiries', page=pagination.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.inquiries', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.inquiries', page=pagination.next_num, **request.args) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">
+                    {% if request.args.get('search') or request.args.get('inquiry_type') or request.args.get('status') %}
+                    没有找到符合条件的咨询
+                    {% else %}
+                    还没有任何咨询
+                    {% endif %}
+                </h4>
+                <p class="text-muted mb-4">
+                    {% if request.args.get('search') or request.args.get('inquiry_type') or request.args.get('status') %}
+                    尝试调整搜索条件或筛选器
+                    {% else %}
+                    等待客户提交咨询询问
+                    {% endif %}
+                </p>
+                
+                {% if request.args.get('search') or request.args.get('inquiry_type') or request.args.get('status') %}
+                <a href="{{ url_for('admin.inquiries') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-times me-2"></i>清除筛选
+                </a>
+                {% endif %}
+                
+                <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-primary" target="_blank">
+                    <i class="fas fa-external-link-alt me-2"></i>查看咨询表单
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle reply form
+function toggleReplyForm(inquiryId) {
+    const form = document.getElementById(`replyForm-${inquiryId}`);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+// Send reply
+function sendReply(event, inquiryId) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Add inquiry ID
+    formData.append('inquiry_id', inquiryId);
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>发送中...';
+    submitBtn.disabled = true;
+    
+    fetch('/admin/inquiries/reply', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('回复发送成功！');
+            form.reset();
+            toggleReplyForm(inquiryId);
+            location.reload();
+        } else {
+            alert('发送失败：' + (data.message || '未知错误'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('发送失败，请稍后重试');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+// Update inquiry status
+function updateStatus(inquiryId, status) {
+    if (confirm(`确定要将状态更新为"${status}"吗？`)) {
+        fetch('/admin/inquiries/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                inquiry_id: inquiryId,
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('更新失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('更新失败，请稍后重试');
+        });
+    }
+}
+
+// Mark as read
+function markAsRead(inquiryId) {
+    fetch('/admin/inquiries/read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            inquiry_id: inquiryId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update UI without reload
+            const card = document.querySelector(`#inquiry-${inquiryId}`);
+            if (card) {
+                card.classList.remove('unread');
+                const newBadge = card.querySelector('.badge.bg-primary');
+                if (newBadge) {
+                    newBadge.remove();
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Set priority
+function setPriority(inquiryId, priority) {
+    if (confirm(`确定要将优先级设为"${priority}"吗？`)) {
+        fetch('/admin/inquiries/priority', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                inquiry_id: inquiryId,
+                priority: priority
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('更新失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('更新失败，请稍后重试');
+        });
+    }
+}
+
+// View full inquiry
+function viewFullInquiry(inquiryId) {
+    window.open(`/admin/inquiries/${inquiryId}`, '_blank');
+}
+
+// Export inquiries
+function exportInquiries() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'true');
+    window.open(`/admin/inquiries/export?${params.toString()}`, '_blank');
+}
+
+// Refresh inquiries
+document.getElementById('refreshInquiries').addEventListener('click', function() {
+    const btn = this;
+    const icon = btn.querySelector('i');
+    
+    icon.classList.add('fa-spin');
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+});
+
+// Auto-submit filter form on select changes
+document.querySelectorAll('#filterForm select').forEach(select => {
+    select.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+});
+
+// Real-time search with debounce
+let searchTimeout;
+const searchInput = document.querySelector('input[name="search"]');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                document.getElementById('filterForm').submit();
+            }
+        }, 500);
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + K for search focus
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+    }
+    
+    // Ctrl/Cmd + R for refresh
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        location.reload();
+    }
+});
+
+// Auto-refresh for new inquiries (every 2 minutes)
+setInterval(() => {
+    fetch('/admin/inquiries/count')
+        .then(response => response.json())
+        .then(data => {
+            const currentCount = {{ stats.total or 0 }};
+            if (data.count > currentCount) {
+                // Show notification for new inquiries
+                showNotification(`有 ${data.count - currentCount} 条新咨询`, 'info');
+            }
+        })
+        .catch(error => console.log('Auto-refresh error:', error));
+}, 120000);
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

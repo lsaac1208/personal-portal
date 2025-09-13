@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+
+{% block title %}商机管理 - CRM系统{% endblock %}
+{% block meta_description %}个人门户网站CRM商机管理系统，跟踪销售机会和业务流水线。{% endblock %}
+
+{% block extra_css %}
+<style>
+.opportunity-header {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.opportunity-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    position: relative;
+    border-left: 4px solid;
+}
+
+.opportunity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.opportunity-card.识别需求 { border-left-color: #ffc107; }
+.opportunity-card.方案设计 { border-left-color: #17a2b8; }
+.opportunity-card.商务谈判 { border-left-color: #fd7e14; }
+.opportunity-card.合同签署 { border-left-color: #007bff; }
+.opportunity-card.项目实施 { border-left-color: #28a745; }
+.opportunity-card.项目完成 { border-left-color: #198754; }
+.opportunity-card.已流失 { border-left-color: #dc3545; }
+
+.value-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(45deg, #11998e, #38ef7d);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.probability-bar {
+    height: 8px;
+    background-color: var(--bs-light);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.probability-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.stage-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.stage-step {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: white;
+    background-color: var(--bs-light);
+    position: relative;
+}
+
+.stage-step.active {
+    background-color: var(--bs-primary);
+}
+
+.stage-step.completed {
+    background-color: var(--bs-success);
+}
+
+.stage-connector {
+    flex: 1;
+    height: 2px;
+    background-color: var(--bs-light);
+}
+
+.stage-connector.completed {
+    background-color: var(--bs-success);
+}
+
+.stage-connector.active {
+    background-color: var(--bs-primary);
+}
+
+.opportunity-meta {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+.close-date-indicator {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.close-date-indicator.overdue {
+    background-color: var(--bs-danger);
+    color: white;
+}
+
+.close-date-indicator.urgent {
+    background-color: var(--bs-warning);
+    color: white;
+}
+
+.close-date-indicator.normal {
+    background-color: var(--bs-info);
+    color: white;
+}
+
+.stats-grid {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-bar {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.opportunity-actions .btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    margin: 0 0.1rem;
+}
+
+.next-action-badge {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .opportunity-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .filter-bar {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .stats-grid {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+[data-bs-theme="dark"] .stage-step {
+    background-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .stage-connector {
+    background-color: var(--bs-gray-600);
+}
+
+@media (max-width: 768px) {
+    .opportunity-card .row {
+        --bs-gutter-x: 1rem;
+    }
+    
+    .value-badge {
+        position: static;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+    }
+    
+    .opportunity-actions {
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .stage-progress {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="opportunity-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">商机管理</h1>
+                    <p class="mb-0 opacity-90">跟踪销售机会和业务流水线</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('crm.opportunity_edit') }}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>创建商机
+                    </a>
+                    <button class="btn btn-outline-light" id="refreshOpportunities">
+                        <i class="fas fa-sync-alt me-2"></i>刷新
+                    </button>
+                    <button class="btn btn-outline-light" onclick="exportOpportunities()">
+                        <i class="fas fa-download me-2"></i>导出
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <div class="row text-center">
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-primary">{{ stats.total_opportunities or 0 }}</div>
+                            <small class="text-muted">总商机数</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-info">{{ stats.active_opportunities or 0 }}</div>
+                            <small class="text-muted">进行中</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-success">{{ stats.closed_won or 0 }}</div>
+                            <small class="text-muted">已成交</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-danger">{{ stats.closed_lost or 0 }}</div>
+                            <small class="text-muted">已流失</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-warning">
+                                ¥{{ "{:,.0f}".format(stats.total_value or 0) }}
+                            </div>
+                            <small class="text-muted">总价值</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div>
+                            <div class="h4 mb-1 text-secondary">
+                                {{ ((stats.closed_won or 0) / (stats.total_opportunities or 1) * 100) | round(1) }}%
+                            </div>
+                            <small class="text-muted">成交率</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <form method="GET" class="row g-3" id="filterForm">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="搜索商机标题或客户..." 
+                                   value="{{ request.args.get('search', '') }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="stage">
+                            <option value="">所有阶段</option>
+                            <option value="识别需求" {{ 'selected' if current_stage == '识别需求' }}>识别需求</option>
+                            <option value="方案设计" {{ 'selected' if current_stage == '方案设计' }}>方案设计</option>
+                            <option value="商务谈判" {{ 'selected' if current_stage == '商务谈判' }}>商务谈判</option>
+                            <option value="合同签署" {{ 'selected' if current_stage == '合同签署' }}>合同签署</option>
+                            <option value="项目实施" {{ 'selected' if current_stage == '项目实施' }}>项目实施</option>
+                            <option value="项目完成" {{ 'selected' if current_stage == '项目完成' }}>项目完成</option>
+                            <option value="已流失" {{ 'selected' if current_stage == '已流失' }}>已流失</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="status">
+                            <option value="">所有状态</option>
+                            <option value="进行中" {{ 'selected' if current_status == '进行中' }}>进行中</option>
+                            <option value="已成交" {{ 'selected' if current_status == '已成交' }}>已成交</option>
+                            <option value="已流失" {{ 'selected' if current_status == '已流失' }}>已流失</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="sort">
+                            <option value="updated_desc" {{ 'selected' if current_sort == 'updated_desc' }}>最近更新</option>
+                            <option value="value_desc" {{ 'selected' if current_sort == 'value_desc' }}>价值排序</option>
+                            <option value="probability_desc" {{ 'selected' if current_sort == 'probability_desc' }}>成功概率</option>
+                            <option value="close_date_asc" {{ 'selected' if current_sort == 'close_date_asc' }}>预期成交</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="{{ url_for('crm.opportunity_list') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            <a href="{{ url_for('crm.crm_dashboard') }}" class="btn btn-outline-info">
+                                <i class="fas fa-chart-line"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Opportunity List -->
+            {% if opportunities %}
+            <div class="opportunities-list">
+                {% for opportunity in opportunities %}
+                <div class="opportunity-card {{ opportunity.stage }}">
+                    <!-- Value Badge -->
+                    {% if opportunity.value %}
+                    <div class="value-badge">
+                        ¥{{ "{:,.0f}".format(opportunity.value) }}
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <!-- Opportunity Header -->
+                                <div class="d-flex align-items-start justify-content-between mb-3">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title mb-2">
+                                            <a href="{{ url_for('crm.opportunity_detail', id=opportunity.id) }}" 
+                                               class="text-decoration-none">
+                                                {{ opportunity.title }}
+                                            </a>
+                                            {% if opportunity.opportunity_code %}
+                                            <small class="text-muted">({{ opportunity.opportunity_code }})</small>
+                                            {% endif %}
+                                        </h5>
+                                        
+                                        <div class="opportunity-meta d-flex flex-wrap gap-3 mb-2">
+                                            <span>
+                                                <i class="fas fa-user me-1"></i>
+                                                <a href="{{ url_for('crm.customer_detail', id=opportunity.customer.id) }}" 
+                                                   class="text-decoration-none">
+                                                    {{ opportunity.customer.name }}
+                                                </a>
+                                            </span>
+                                            {% if opportunity.customer.company %}
+                                            <span>
+                                                <i class="fas fa-building me-1"></i>{{ opportunity.customer.company }}
+                                            </span>
+                                            {% endif %}
+                                            {% if opportunity.customer.email %}
+                                            <span>
+                                                <i class="fas fa-envelope me-1"></i>{{ opportunity.customer.email }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="d-flex flex-wrap gap-2 mb-3">
+                                            <span class="badge" style="background-color: {{ opportunity.get_stage_color() }};">
+                                                {{ opportunity.stage }}
+                                            </span>
+                                            <span class="badge bg-{{ 'success' if opportunity.status == '已成交' else 'danger' if opportunity.status == '已流失' else 'info' }}">
+                                                {{ opportunity.status }}
+                                            </span>
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-percentage me-1"></i>{{ (opportunity.probability * 100) | round(0) }}%
+                                            </span>
+                                            {% if opportunity.expected_close_date %}
+                                            {% set days_to_close = opportunity.days_to_close() %}
+                                            <span class="close-date-indicator {{ 'overdue' if days_to_close < 0 else 'urgent' if days_to_close <= 7 else 'normal' }}">
+                                                {% if days_to_close < 0 %}
+                                                <i class="fas fa-exclamation-triangle me-1"></i>逾期{{ -days_to_close }}天
+                                                {% elif days_to_close == 0 %}
+                                                <i class="fas fa-flag me-1"></i>今日截止
+                                                {% elif days_to_close <= 7 %}
+                                                <i class="fas fa-clock me-1"></i>{{ days_to_close }}天内
+                                                {% else %}
+                                                <i class="fas fa-calendar me-1"></i>{{ opportunity.expected_close_date.strftime('%m月%d日') }}
+                                                {% endif %}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                {% if opportunity.description %}
+                                <div class="opportunity-description mb-3">
+                                    <p class="card-text">{{ opportunity.description | truncate(200) }}</p>
+                                </div>
+                                {% endif %}
+
+                                <!-- Stage Progress -->
+                                <div class="stage-progress">
+                                    {% set stages = ['识别需求', '方案设计', '商务谈判', '合同签署', '项目实施', '项目完成'] %}
+                                    {% for stage in stages %}
+                                    {% set stage_index = loop.index0 %}
+                                    {% set current_index = stages.index(opportunity.stage) if opportunity.stage in stages else -1 %}
+                                    
+                                    <div class="stage-step {{ 'completed' if stage_index < current_index else 'active' if stage_index == current_index else '' }}">
+                                        {% if stage_index < current_index %}
+                                        <i class="fas fa-check"></i>
+                                        {% elif stage_index == current_index %}
+                                        {{ stage_index + 1 }}
+                                        {% else %}
+                                        {{ stage_index + 1 }}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if not loop.last %}
+                                    <div class="stage-connector {{ 'completed' if stage_index < current_index else 'active' if stage_index == current_index else '' }}"></div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Progress Bar -->
+                                <div class="probability-bar">
+                                    <div class="probability-fill" 
+                                         style="width: {{ (opportunity.probability * 100) | round(0) }}%; background-color: {{ opportunity.get_stage_color() }};"></div>
+                                </div>
+
+                                <!-- Next Action -->
+                                {% if opportunity.next_action %}
+                                <div class="next-action mb-3">
+                                    <strong>下一步行动：</strong>
+                                    <span class="next-action-badge">{{ opportunity.next_action }}</span>
+                                    {% if opportunity.next_action_date %}
+                                    <small class="text-muted ms-2">
+                                        <i class="fas fa-clock me-1"></i>{{ opportunity.next_action_date.strftime('%m月%d日 %H:%M') }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Timeline -->
+                                <div class="opportunity-timeline">
+                                    <div class="row g-2 small text-muted">
+                                        <div class="col-md-6">
+                                            <strong>创建时间:</strong> {{ opportunity.created_at.strftime('%Y-%m-%d') }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>最后更新:</strong> {{ opportunity.updated_at.strftime('%Y-%m-%d') }}
+                                        </div>
+                                        {% if opportunity.actual_close_date %}
+                                        <div class="col-md-6">
+                                            <strong>实际成交:</strong> {{ opportunity.actual_close_date.strftime('%Y-%m-%d') }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <!-- Probability Display -->
+                                <div class="text-center mb-3">
+                                    <div class="h2 mb-1" style="color: {{ opportunity.get_stage_color() }};">
+                                        {{ (opportunity.probability * 100) | round(0) }}%
+                                    </div>
+                                    <small class="text-muted">成功概率</small>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="opportunity-actions d-grid gap-2">
+                                    <a href="{{ url_for('crm.opportunity_detail', id=opportunity.id) }}" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-eye me-2"></i>查看详情
+                                    </a>
+                                    
+                                    <a href="{{ url_for('crm.opportunity_edit', id=opportunity.id) }}" 
+                                       class="btn btn-outline-success">
+                                        <i class="fas fa-edit me-2"></i>编辑商机
+                                    </a>
+                                    
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                                            <i class="fas fa-cog"></i> 更多操作
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="updateStage({{ opportunity.id }}, '方案设计')">
+                                                <i class="fas fa-arrow-right me-2"></i>推进到方案设计
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStage({{ opportunity.id }}, '商务谈判')">
+                                                <i class="fas fa-handshake me-2"></i>推进到商务谈判
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStage({{ opportunity.id }}, '合同签署')">
+                                                <i class="fas fa-file-signature me-2"></i>推进到合同签署
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStage({{ opportunity.id }}, '项目完成')">
+                                                <i class="fas fa-check-circle text-success me-2"></i>标记为完成
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateStage({{ opportunity.id }}, '已流失')">
+                                                <i class="fas fa-times-circle text-danger me-2"></i>标记为流失
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="商机分页" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('crm.opportunity_list', page=pagination.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('crm.opportunity_list', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('crm.opportunity_list', page=pagination.next_num, **request.args) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="fas fa-briefcase fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">
+                    {% if request.args.get('search') or request.args.get('stage') or request.args.get('status') %}
+                    没有找到符合条件的商机
+                    {% else %}
+                    还没有任何商机记录
+                    {% endif %}
+                </h4>
+                <p class="text-muted mb-4">
+                    {% if request.args.get('search') or request.args.get('stage') or request.args.get('status') %}
+                    尝试调整搜索条件或筛选器
+                    {% else %}
+                    开始创建您的第一个销售机会
+                    {% endif %}
+                </p>
+                
+                {% if request.args.get('search') or request.args.get('stage') or request.args.get('status') %}
+                <a href="{{ url_for('crm.opportunity_list') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-times me-2"></i>清除筛选
+                </a>
+                {% endif %}
+                
+                <a href="{{ url_for('crm.opportunity_edit') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>创建商机
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Update opportunity stage
+function updateStage(opportunityId, stage) {
+    if (confirm(`确定要将商机阶段更新为"${stage}"吗？`)) {
+        fetch(`/crm/opportunity/${opportunityId}/stage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                stage: stage
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('更新失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('更新失败，请稍后重试');
+        });
+    }
+}
+
+// Export opportunities
+function exportOpportunities() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'true');
+    window.open(`/crm/opportunities/export?${params.toString()}`, '_blank');
+}
+
+// Refresh opportunities
+document.getElementById('refreshOpportunities').addEventListener('click', function() {
+    const btn = this;
+    const icon = btn.querySelector('i');
+    
+    icon.classList.add('fa-spin');
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+});
+
+// Auto-submit filter form on select changes
+document.querySelectorAll('#filterForm select').forEach(select => {
+    select.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+});
+
+// Real-time search with debounce
+let searchTimeout;
+const searchInput = document.querySelector('input[name="search"]');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                document.getElementById('filterForm').submit();
+            }
+        }, 500);
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + K for search focus
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+    }
+    
+    // Ctrl/Cmd + R for refresh
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        location.reload();
+    }
+    
+    // Ctrl/Cmd + N for new opportunity
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = '{{ url_for("crm.opportunity_edit") }}';
+    }
+});
+
+// Bulk operations (future feature)
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.opportunity-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkedBoxes = document.querySelectorAll('.opportunity-checkbox:checked');
+    const bulkActions = document.getElementById('bulkActions');
+    
+    if (checkedBoxes.length > 0) {
+        bulkActions.style.display = 'block';
+        document.getElementById('selectedCount').textContent = checkedBoxes.length;
+    } else {
+        bulkActions.style.display = 'none';
+    }
+}
+
+// Auto-refresh for updates (every 5 minutes)
+setInterval(() => {
+    fetch('/crm/opportunities/count')
+        .then(response => response.json())
+        .then(data => {
+            const currentCount = {{ stats.total_opportunities or 0 }};
+            if (data.count !== currentCount) {
+                showNotification('商机数据已更新', 'info');
+            }
+        })
+        .catch(error => console.log('Auto-refresh error:', error));
+}, 300000);
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

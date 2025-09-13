@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if category %}{{ category }} - {% endif %}内容列表 - 个人门户网站
+{% endblock %}
+
+{% block meta_description %}
+{% if category %}
+浏览{{ category }}分类下的所有内容，包括深度技术文章、行业观察和实用教程。
+{% else %}
+浏览所有技术文章、项目分享和个人见解，涵盖Web开发、编程技巧等多个领域。
+{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-3">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> 首页
+                </a>
+            </li>
+            {% if category %}
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('content.all_content') }}" class="text-decoration-none">内容</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ get_category_emoji(category) }} {{ category }}
+            </li>
+            {% else %}
+            <li class="breadcrumb-item active" aria-current="page">全部内容</li>
+            {% endif %}
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="text-center mb-4">
+                {% if category %}
+                <h1 class="display-4 mb-3">
+                    {{ get_category_emoji(category) }} {{ category }}
+                </h1>
+                <p class="lead text-muted">
+                    {% if category == '技术' %}
+                    深度技术文章和开发经验分享，涵盖前端、后端、架构等多个技术领域
+                    {% elif category == '观察' %}
+                    对行业趋势、技术发展和市场动态的深度观察和分析
+                    {% elif category == '生活' %}
+                    工作之余的生活感悟、兴趣爱好和个人成长记录
+                    {% elif category == '创作' %}
+                    设计作品、创意项目和艺术创作的展示与分享
+                    {% elif category == '代码' %}
+                    实用代码片段、工具函数和编程技巧的集合
+                    {% else %}
+                    {{ category }}分类下的精彩内容
+                    {% endif %}
+                </p>
+                {% else %}
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-blog"></i> 全部内容
+                </h1>
+                <p class="lead text-muted">
+                    探索技术世界，分享编程智慧，记录成长足迹
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Filter and Search Section -->
+            <div class="row align-items-center mb-4">
+                <div class="col-md-8">
+                    <!-- Category Filters -->
+                    <div class="btn-group" role="group" aria-label="内容分类筛选">
+                        <a href="{{ url_for('content.all_content') }}" 
+                           class="btn btn-outline-primary {% if not category %}active{% endif %}">
+                            <i class="fas fa-list me-1"></i>全部
+                        </a>
+                        <a href="{{ url_for('content.category_list', category='技术') }}" 
+                           class="btn btn-outline-primary {% if category == '技术' %}active{% endif %}">
+                            💻 技术
+                        </a>
+                        <a href="{{ url_for('content.category_list', category='观察') }}" 
+                           class="btn btn-outline-primary {% if category == '观察' %}active{% endif %}">
+                            📰 观察
+                        </a>
+                        <a href="{{ url_for('content.category_list', category='生活') }}" 
+                           class="btn btn-outline-primary {% if category == '生活' %}active{% endif %}">
+                            🌊 生活
+                        </a>
+                        <a href="{{ url_for('content.category_list', category='创作') }}" 
+                           class="btn btn-outline-primary {% if category == '创作' %}active{% endif %}">
+                            🎨 创作
+                        </a>
+                        <a href="{{ url_for('content.category_list', category='代码') }}" 
+                           class="btn btn-outline-primary {% if category == '代码' %}active{% endif %}">
+                            🔧 代码
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <!-- Search Button -->
+                    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#searchModal">
+                        <i class="fas fa-search me-1"></i>搜索内容
+                    </button>
+                    
+                    <!-- Sort Options -->
+                    <div class="dropdown d-inline-block ms-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sort me-1"></i>排序
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?sort=latest">最新发布</a></li>
+                            <li><a class="dropdown-item" href="?sort=popular">最受欢迎</a></li>
+                            <li><a class="dropdown-item" href="?sort=alphabetical">按标题排序</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content List -->
+    <div class="row">
+        <div class="col-lg-8">
+            {% if content_list %}
+            <div class="content-list">
+                {% for content in content_list.items %}
+                <article class="card mb-4 shadow-sm hover-lift">
+                    <div class="row g-0">
+                        {% if content.featured_image %}
+                        <div class="col-md-4">
+                            <img src="{{ url_for('static', filename='uploads/' + content.featured_image) }}" 
+                                 class="img-fluid rounded-start h-100 object-fit-cover" 
+                                 alt="{{ content.title }}" loading="lazy"
+                                 style="min-height: 200px;">
+                        </div>
+                        <div class="col-md-8">
+                        {% else %}
+                        <div class="col-12">
+                        {% endif %}
+                            <div class="card-body h-100 d-flex flex-column">
+                                <!-- Category Badge -->
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">
+                                        {{ get_category_emoji(content.category) }} {{ content.category }}
+                                    </span>
+                                    {% if content.is_featured %}
+                                    <span class="badge bg-warning text-dark ms-1">
+                                        <i class="fas fa-star"></i> 精选
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Title -->
+                                <h5 class="card-title">
+                                    <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ content.title }}
+                                    </a>
+                                </h5>
+                                
+                                <!-- Summary -->
+                                <p class="card-text text-muted flex-grow-1">
+                                    {{ content.summary or (content.content | striptags | truncate(150)) }}
+                                </p>
+                                
+                                <!-- Meta Information -->
+                                <div class="card-text">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {{ moment(content.created_at).format('YYYY-MM-DD') }}
+                                                
+                                                <span class="ms-3">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    {{ estimate_reading_time(content.content) }}分钟阅读
+                                                </span>
+                                                
+                                                {% if content.updated_at != content.created_at %}
+                                                <span class="ms-3">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    {{ moment(content.updated_at).fromNow() }}更新
+                                                </span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                阅读更多 <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tags -->
+                                {% if content.tags %}
+                                <div class="mt-2">
+                                    {% for tag in content.tags[:4] %}
+                                    <a href="{{ url_for('main.tag_view', tag_name=tag.name) }}" 
+                                       class="badge bg-light text-primary text-decoration-none me-1">
+                                        #{{ tag.name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if content_list.pages > 1 %}
+            <nav aria-label="内容分页">
+                <ul class="pagination justify-content-center">
+                    {% if content_list.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('content.category_list' if category else 'content.all_content', 
+                                                            category=category, page=content_list.prev_num) }}" 
+                           aria-label="上一页">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in content_list.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != content_list.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('content.category_list' if category else 'content.all_content', 
+                                                                    category=category, page=page_num) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if content_list.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('content.category_list' if category else 'content.all_content', 
+                                                            category=category, page=content_list.next_num) }}" 
+                           aria-label="下一页">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-search fa-4x text-muted"></i>
+                </div>
+                <h3 class="text-muted mb-3">
+                    {% if category %}
+                    {{ category }}分类下暂无内容
+                    {% else %}
+                    暂无内容
+                    {% endif %}
+                </h3>
+                <p class="text-muted mb-4">
+                    {% if category %}
+                    该分类下的内容正在创作中，可以浏览其他分类或查看全部内容。
+                    {% else %}
+                    内容正在创作中，请稍后回来查看精彩内容。
+                    {% endif %}
+                </p>
+                <div>
+                    {% if category %}
+                    <a href="{{ url_for('content.all_content') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-list me-1"></i>查看全部内容
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-1"></i>返回首页
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 100px;">
+                <!-- Popular Tags -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tags me-2"></i>热门标签
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if popular_tags %}
+                        <div class="tag-cloud">
+                            {% for tag, count in popular_tags %}
+                            <a href="{{ url_for('content.tag_content', tag=tag) }}" 
+                               class="badge bg-light text-primary text-decoration-none me-1 mb-2"
+                               style="font-size: {{ 0.8 + (count / 10) }}rem;">
+                                #{{ tag }} <span class="text-muted">({{ count }})</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">暂无热门标签</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Recent Content -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>最新内容
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_content %}
+                        {% for content in recent_content %}
+                        <div class="d-flex mb-3 {% if not loop.last %}pb-3 border-bottom{% endif %}">
+                            <div class="flex-shrink-0 me-3">
+                                <span class="badge bg-primary">
+                                    {{ get_category_emoji(content.category) }}
+                                </span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ content.title | truncate(40) }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    {{ moment(content.created_at).fromNow() }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-muted mb-0">暂无最新内容</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Content Stats -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>内容统计
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <strong class="text-primary">{{ stats.total_content or 0 }}</strong>
+                                </div>
+                                <small class="text-muted">总文章</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <strong class="text-success">{{ stats.total_words or 0 }}</strong>
+                                </div>
+                                <small class="text-muted">总字数</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Newsletter Signup -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-envelope me-2"></i>邮件订阅
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text small text-muted mb-3">
+                            订阅邮件，第一时间获取最新技术文章和项目更新。
+                        </p>
+                        <form method="POST" action="{{ url_for('api.newsletter_subscribe') }}" class="needs-validation" novalidate>
+                            <div class="input-group">
+                                <input type="email" class="form-control" name="email" 
+                                       placeholder="输入邮箱地址" required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">
+                                请输入有效的邮箱地址
+                            </div>
+                        </form>
+                        <small class="text-muted mt-2 d-block">
+                            <i class="fas fa-shield-alt me-1"></i>不会发送垃圾邮件
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.object-fit-cover {
+    object-fit: cover;
+}
+
+.tag-cloud .badge {
+    transition: all 0.3s ease;
+}
+
+.tag-cloud .badge:hover {
+    transform: scale(1.1);
+    background-color: var(--bs-primary) !important;
+    color: white !important;
+}
+
+.content-list .card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.125);
+}
+
+.content-list .card:hover {
+    border-color: var(--bs-primary);
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %}

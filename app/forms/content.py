@@ -4,8 +4,8 @@
 """
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, BooleanField, DateField
-from wtforms.validators import DataRequired, Length, Optional, URL
+from wtforms import StringField, TextAreaField, SelectField, BooleanField, DateField, IntegerField, DateTimeField
+from wtforms.validators import DataRequired, Length, Optional, URL, NumberRange
 from wtforms.widgets import TextArea
 
 
@@ -93,6 +93,93 @@ class ContentForm(FlaskForm):
     seo_keywords = StringField('SEO关键词',
                               validators=[Optional(), Length(max=500, message='关键词不能超过500字符')],
                               render_kw={'placeholder': '用逗号分隔关键词（可选）'})
+    
+    # 页面元数据
+    meta_title = StringField('页面标题',
+                            validators=[Optional(), Length(max=200, message='页面标题不能超过200字符')],
+                            render_kw={'placeholder': '页面标题标签内容（可选）'})
+    
+    meta_description = TextAreaField('页面描述',
+                                    validators=[Optional(), Length(max=300, message='页面描述不能超过300字符')],
+                                    render_kw={
+                                        'placeholder': '页面描述标签内容（可选）',
+                                        'rows': 2
+                                    })
+    
+    # 内容元数据
+    reading_time = IntegerField('预计阅读时间(分钟)',
+                               validators=[Optional(), NumberRange(min=1, max=120, message='阅读时间应在1-120分钟之间')],
+                               render_kw={'placeholder': '留空自动计算'})
+    
+    difficulty = SelectField('难度等级',
+                            choices=[
+                                ('初级', '初级'),
+                                ('中级', '中级'),
+                                ('高级', '高级')
+                            ],
+                            default='初级')
+    
+    # 状态管理
+    status = SelectField('发布状态',
+                        choices=[
+                            ('草稿', '草稿'),
+                            ('已发布', '已发布'),
+                            ('计划', '计划发布'),
+                            ('归档', '归档')
+                        ],
+                        default='草稿')
+    
+    priority = SelectField('优先级',
+                          choices=[
+                              ('低', '低'),
+                              ('普通', '普通'),
+                              ('高', '高'),
+                              ('紧急', '紧急')
+                          ],
+                          default='普通')
+    
+    # URL和索引设置
+    slug = StringField('URL标识',
+                      validators=[Optional(), Length(max=200, message='URL标识不能超过200字符')],
+                      render_kw={'placeholder': '留空自动生成'})
+    
+    publish_date = DateTimeField('发布时间',
+                                validators=[Optional()],
+                                render_kw={'placeholder': '留空使用当前时间'})
+    
+    # 访问控制
+    indexable = BooleanField('允许搜索引擎索引', default=True)
+    sitemap = BooleanField('包含在站点地图中', default=True)
+    comments_enabled = BooleanField('允许评论', default=True)
+    
+    # 社交媒体优化
+    og_title = StringField('社交分享标题',
+                          validators=[Optional(), Length(max=200, message='分享标题不能超过200字符')],
+                          render_kw={'placeholder': '社交媒体分享时显示的标题'})
+    
+    og_description = TextAreaField('社交分享描述',
+                                  validators=[Optional(), Length(max=300, message='分享描述不能超过300字符')],
+                                  render_kw={
+                                      'placeholder': '社交媒体分享时显示的描述',
+                                      'rows': 2
+                                  })
+    
+    twitter_card = SelectField('Twitter卡片类型',
+                              choices=[
+                                  ('summary', '摘要'),
+                                  ('summary_large_image', '大图摘要'),
+                                  ('app', '应用'),
+                                  ('player', '播放器')
+                              ],
+                              default='summary')
+    
+    # 版本控制
+    revision_notes = TextAreaField('版本说明',
+                                  validators=[Optional()],
+                                  render_kw={
+                                      'placeholder': '记录本次修改的主要内容（可选）',
+                                      'rows': 3
+                                  })
 
 
 class CodeSnippetForm(FlaskForm):

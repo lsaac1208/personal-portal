@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block title %}内容管理 - 管理后台{% endblock %}
+{% block meta_description %}内容管理列表页面，支持多种内容类型的创建、编辑、发布和管理功能。{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.0/font/bootstrap-icons.css">
+<style>
+.content-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.content-filters {
+    background: #f8f9fa;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.content-item {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.content-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.content-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.content-actions {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.content-item:hover .content-actions {
+    opacity: 1;
+}
+
+.category-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.category-badge.技术 { background: #e3f2fd; color: #1976d2; }
+.category-badge.观察 { background: #f3e5f5; color: #7b1fa2; }
+.category-badge.生活 { background: #e8f5e8; color: #388e3c; }
+.category-badge.创作 { background: #fff3e0; color: #f57c00; }
+.category-badge.代码 { background: #fce4ec; color: #c2185b; }
+
+.status-indicator {
+    width: 8px;
+    height: 100%;
+    border-radius: 4px;
+}
+
+.status-indicator.published { background: #28a745; }
+.status-indicator.draft { background: #ffc107; }
+.status-indicator.scheduled { background: #17a2b8; }
+
+.seo-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.seo-score.high { background: linear-gradient(135deg, #28a745, #20c997); }
+.seo-score.medium { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.seo-score.low { background: linear-gradient(135deg, #6c757d, #495057); }
+
+.bulk-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    display: none;
+}
+
+.bulk-actions.show {
+    display: block;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.search-filters .form-select, .search-filters .form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.search-filters .form-select:focus, .search-filters .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+@media (max-width: 768px) {
+    .content-stats {
+        padding: 1.5rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .content-filters {
+        padding: 1rem;
+    }
+    
+    .bulk-actions {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        margin-top: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 统计概览 -->
+    <div class="content-stats">
+        <div class="row">
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card">
+                    <div class="h3 mb-2">{{ stats.total }}</div>
+                    <div>总内容数</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card">
+                    <div class="h3 mb-2">{{ stats.published }}</div>
+                    <div>已发布</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card">
+                    <div class="h3 mb-2">{{ stats.draft }}</div>
+                    <div>草稿</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card">
+                    <div class="h3 mb-2">{{ stats.featured }}</div>
+                    <div>精选内容</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选和搜索 -->
+    <div class="content-filters">
+        <form method="GET" class="search-filters">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">内容分类</label>
+                    <select name="category" class="form-select">
+                        <option value="">全部分类</option>
+                        <option value="技术" {{ 'selected' if current_category == '技术' }}>技术</option>
+                        <option value="观察" {{ 'selected' if current_category == '观察' }}>观察</option>
+                        <option value="生活" {{ 'selected' if current_category == '生活' }}>生活</option>
+                        <option value="创作" {{ 'selected' if current_category == '创作' }}>创作</option>
+                        <option value="代码" {{ 'selected' if current_category == '代码' }}>代码</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">发布状态</label>
+                    <select name="status" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="published" {{ 'selected' if current_status == 'published' }}>已发布</option>
+                        <option value="draft" {{ 'selected' if current_status == 'draft' }}>草稿</option>
+                        <option value="featured" {{ 'selected' if current_status == 'featured' }}>精选</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">排序方式</label>
+                    <select name="sort" class="form-select">
+                        <option value="updated_desc" {{ 'selected' if current_sort == 'updated_desc' }}>最近更新</option>
+                        <option value="created_desc" {{ 'selected' if current_sort == 'created_desc' }}>最新发布</option>
+                        <option value="title_asc" {{ 'selected' if current_sort == 'title_asc' }}>标题排序</option>
+                        <option value="views_desc" {{ 'selected' if current_sort == 'views_desc' }}>浏览量</option>
+                        <option value="seo_score_desc" {{ 'selected' if current_sort == 'seo_score_desc' }}>SEO评分</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">搜索内容</label>
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="搜索标题或内容..." 
+                               value="{{ current_search or '' }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-0">内容列表</h2>
+            <small class="text-muted">共 {{ contents.total }} 条记录</small>
+        </div>
+        <div>
+            <a href="{{ url_for('content_management.create_content') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>创建内容
+            </a>
+            <a href="{{ url_for('content_management.content_stats') }}" class="btn btn-outline-info">
+                <i class="bi bi-graph-up me-2"></i>统计分析
+            </a>
+        </div>
+    </div>
+
+    <!-- 内容列表 -->
+    <form id="bulkActionForm" method="POST" action="{{ url_for('content_management.bulk_action') }}">
+        <div class="row">
+            {% for content in contents.items %}
+            <div class="col-12 mb-3">
+                <div class="content-item card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <!-- 选择框和状态指示器 -->
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center">
+                                    <input type="checkbox" name="content_ids" value="{{ content.id }}" 
+                                           class="form-check-input content-checkbox me-3">
+                                    <div class="status-indicator {{ 'published' if content.is_published else 'draft' }}"></div>
+                                </div>
+                            </div>
+
+                            <!-- 内容信息 -->
+                            <div class="col">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-1">
+                                        <a href="{{ url_for('content_management.edit_content', id=content.id) }}" 
+                                           class="text-decoration-none">
+                                            {{ content.title }}
+                                        </a>
+                                        {% if content.is_featured %}
+                                        <i class="bi bi-star-fill text-warning ms-2" title="精选内容"></i>
+                                        {% endif %}
+                                    </h5>
+                                    <span class="category-badge {{ content.category }}">{{ content.category }}</span>
+                                </div>
+
+                                {% if content.summary %}
+                                <p class="text-muted mb-2">{{ content.summary | truncate(120) }}</p>
+                                {% endif %}
+
+                                <div class="content-meta d-flex flex-wrap gap-3">
+                                    <span><i class="bi bi-calendar3 me-1"></i>{{ content.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                    {% if content.view_count %}
+                                    <span><i class="bi bi-eye me-1"></i>{{ content.view_count }} 次浏览</span>
+                                    {% endif %}
+                                    {% if content.word_count %}
+                                    <span><i class="bi bi-file-text me-1"></i>{{ content.word_count }} 字</span>
+                                    {% endif %}
+                                    {% if content.reading_time %}
+                                    <span><i class="bi bi-clock me-1"></i>{{ content.reading_time }} 分钟阅读</span>
+                                    {% endif %}
+                                    {% if content.tags %}
+                                    <span><i class="bi bi-tags me-1"></i>{{ content.tags | length }} 个标签</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- SEO评分 -->
+                            <div class="col-auto">
+                                <div class="seo-score {{ 'high' if content.seo_score >= 80 else 'medium' if content.seo_score >= 60 else 'low' }}"
+                                     title="SEO评分: {{ content.seo_score }}/100">
+                                    {{ content.seo_score or 0 }}
+                                </div>
+                            </div>
+
+                            <!-- 操作按钮 -->
+                            <div class="col-auto content-actions">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('content_management.edit_content', id=content.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="编辑">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ url_for('content_management.preview_content', id=content.id) }}" 
+                                       class="btn btn-sm btn-outline-info" title="预览" target="_blank">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if content.is_published %}
+                                    <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                       class="btn btn-sm btn-outline-success" title="查看" target="_blank">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="deleteContent({{ content.id }}, '{{ content.title }}')" title="删除">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </form>
+
+    <!-- 分页 -->
+    {% if contents.pages > 1 %}
+    <nav aria-label="内容分页">
+        <ul class="pagination justify-content-center">
+            {% if contents.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('content_management.content_list', 
+                    page=contents.prev_num, category=current_category, status=current_status, 
+                    search=current_search, sort=current_sort) }}">上一页</a>
+            </li>
+            {% endif %}
+
+            {% for page_num in contents.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != contents.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('content_management.content_list', 
+                            page=page_num, category=current_category, status=current_status, 
+                            search=current_search, sort=current_sort) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if contents.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('content_management.content_list', 
+                    page=contents.next_num, category=current_category, status=current_status, 
+                    search=current_search, sort=current_sort) }}">下一页</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- 批量操作面板 -->
+    <div class="bulk-actions" id="bulkActionsPanel">
+        <div class="d-flex align-items-center gap-3">
+            <span id="selectedCount">已选择 0 项</span>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-success" onclick="bulkAction('publish')">发布</button>
+                <button type="button" class="btn btn-sm btn-warning" onclick="bulkAction('unpublish')">取消发布</button>
+                <button type="button" class="btn btn-sm btn-info" onclick="bulkAction('feature')">设为精选</button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="bulkAction('unfeature')">取消精选</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="bulkAction('delete')">删除</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">取消选择</button>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除内容 "<span id="deleteContentTitle"></span>" 吗？</p>
+                <p class="text-danger small">此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.content-checkbox');
+    const bulkPanel = document.getElementById('bulkActionsPanel');
+    const selectedCount = document.getElementById('selectedCount');
+    const bulkForm = document.getElementById('bulkActionForm');
+
+    // 监听选择框变化
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('.content-checkbox:checked');
+        const count = selected.length;
+
+        if (count > 0) {
+            bulkPanel.classList.add('show');
+            selectedCount.textContent = `已选择 ${count} 项`;
+        } else {
+            bulkPanel.classList.remove('show');
+        }
+    }
+
+    // 全选/取消全选
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'btn btn-sm btn-outline-secondary me-2';
+    selectAllBtn.innerHTML = '<i class="bi bi-check-all"></i> 全选';
+    selectAllBtn.onclick = function() {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        updateBulkActions();
+    };
+
+    // 添加全选按钮到工具栏
+    const toolbar = document.querySelector('.d-flex.justify-content-between.align-items-center');
+    if (toolbar && checkboxes.length > 0) {
+        toolbar.children[1].insertBefore(selectAllBtn, toolbar.children[1].firstChild);
+    }
+});
+
+// 批量操作
+function bulkAction(action) {
+    const selected = document.querySelectorAll('.content-checkbox:checked');
+    if (selected.length === 0) {
+        alert('请先选择要操作的内容');
+        return;
+    }
+
+    let message = '';
+    switch (action) {
+        case 'publish':
+            message = `确定要发布选中的 ${selected.length} 个内容吗？`;
+            break;
+        case 'unpublish':
+            message = `确定要取消发布选中的 ${selected.length} 个内容吗？`;
+            break;
+        case 'feature':
+            message = `确定要将选中的 ${selected.length} 个内容设为精选吗？`;
+            break;
+        case 'unfeature':
+            message = `确定要取消选中的 ${selected.length} 个内容的精选状态吗？`;
+            break;
+        case 'delete':
+            message = `确定要删除选中的 ${selected.length} 个内容吗？此操作不可撤销！`;
+            break;
+    }
+
+    if (confirm(message)) {
+        const form = document.getElementById('bulkActionForm');
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = action;
+        form.appendChild(actionInput);
+        form.submit();
+    }
+}
+
+// 清除选择
+function clearSelection() {
+    document.querySelectorAll('.content-checkbox:checked').forEach(cb => cb.checked = false);
+    document.getElementById('bulkActionsPanel').classList.remove('show');
+}
+
+// 删除单个内容
+function deleteContent(id, title) {
+    document.getElementById('deleteContentTitle').textContent = title;
+    document.getElementById('deleteForm').action = `/admin/content/delete/${id}`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// 键盘快捷键
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('content_management.create_content') }}";
+    }
+    if (e.ctrlKey && e.key === 'a') {
+        const activeElement = document.activeElement;
+        if (!activeElement || !activeElement.matches('input, textarea')) {
+            e.preventDefault();
+            document.querySelectorAll('.content-checkbox').forEach(cb => cb.checked = true);
+            document.getElementById('bulkActionsPanel').classList.add('show');
+            document.getElementById('selectedCount').textContent = 
+                `已选择 ${document.querySelectorAll('.content-checkbox').length} 项`;
+        }
+    }
+});
+
+// 搜索框实时搜索（防抖）
+let searchTimeout;
+const searchInput = document.querySelector('input[name="search"]');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                this.form.submit();
+            }
+        }, 500);
+    });
+}
+</script>
+{% endblock %}

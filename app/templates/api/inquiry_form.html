@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}在线咨询 - 个人门户网站{% endblock %}
+{% block meta_description %}联系我进行项目咨询、技术合作或业务洽谈。提供专业的Web开发、技术咨询和解决方案服务。{% endblock %}
+{% block meta_keywords %}在线咨询,项目合作,技术咨询,Web开发,联系方式,业务洽谈{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-3">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> 首页
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">在线咨询</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-handshake text-primary"></i> 在线咨询
+            </h1>
+            <p class="lead text-muted mb-4">
+                有项目想法？需要技术咨询？期待合作机会？<br>
+                让我们一起探讨，为您的创意寻找最佳解决方案
+            </p>
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="feature-item">
+                        <i class="fas fa-rocket fa-2x text-primary mb-2"></i>
+                        <h6>项目开发</h6>
+                        <small class="text-muted">全栈Web应用<br>移动端开发</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-item">
+                        <i class="fas fa-lightbulb fa-2x text-success mb-2"></i>
+                        <h6>技术咨询</h6>
+                        <small class="text-muted">架构设计<br>技术选型</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-item">
+                        <i class="fas fa-users fa-2x text-info mb-2"></i>
+                        <h6>团队合作</h6>
+                        <small class="text-muted">长期合作<br>项目外包</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>咨询表单
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('api.submit_inquiry') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">
+                                    <i class="fas fa-user me-1"></i>姓名 *
+                                </label>
+                                {{ form.name(class="form-control", required=true) }}
+                                <div class="invalid-feedback">
+                                    请输入您的姓名
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>邮箱 *
+                                </label>
+                                {{ form.email(class="form-control", required=true) }}
+                                <div class="invalid-feedback">
+                                    请输入有效的邮箱地址
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>联系电话
+                                </label>
+                                {{ form.phone(class="form-control") }}
+                                <div class="form-text">选填，方便紧急联系</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="company" class="form-label">
+                                    <i class="fas fa-building me-1"></i>公司/组织
+                                </label>
+                                {{ form.company(class="form-control") }}
+                                <div class="form-text">选填</div>
+                            </div>
+                        </div>
+
+                        <!-- Inquiry Details -->
+                        <div class="mb-4">
+                            <label for="inquiry_type" class="form-label">
+                                <i class="fas fa-tags me-1"></i>咨询类型 *
+                            </label>
+                            {{ form.inquiry_type(class="form-select", required=true) }}
+                            <div class="invalid-feedback">
+                                请选择咨询类型
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="subject" class="form-label">
+                                <i class="fas fa-bookmark me-1"></i>主题 *
+                            </label>
+                            {{ form.subject(class="form-control", required=true, placeholder="简要描述您的项目或需求") }}
+                            <div class="invalid-feedback">
+                                请输入咨询主题
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-comment me-1"></i>详细描述 *
+                            </label>
+                            {{ form.description(class="form-control", rows="6", required=true, 
+                                placeholder="请详细描述您的项目需求、技术要求、预算范围、时间安排等信息...") }}
+                            <div class="invalid-feedback">
+                                请详细描述您的需求
+                            </div>
+                            <div class="form-text">
+                                建议包含：项目背景、技术需求、预算范围、时间安排等
+                            </div>
+                        </div>
+
+                        <!-- Project Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="budget_range" class="form-label">
+                                    <i class="fas fa-dollar-sign me-1"></i>预算范围
+                                </label>
+                                {{ form.budget_range(class="form-select") }}
+                                <div class="form-text">有助于提供更合适的解决方案</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="timeline" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>期望时间
+                                </label>
+                                {{ form.timeline(class="form-select") }}
+                                <div class="form-text">项目完成的预期时间</div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="mb-4">
+                            <label for="preferred_tech" class="form-label">
+                                <i class="fas fa-cog me-1"></i>技术要求
+                            </label>
+                            {{ form.preferred_tech(class="form-control", rows="3", 
+                                placeholder="如有特定技术栈或平台要求，请在此说明...") }}
+                            <div class="form-text">
+                                例如：React + Node.js、移动端APP、微信小程序等
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="additional_info" class="form-label">
+                                <i class="fas fa-paperclip me-1"></i>附件说明
+                            </label>
+                            {{ form.additional_info(class="form-control", rows="2", 
+                                placeholder="如有设计稿、需求文档等，请说明，我们将通过邮件沟通...") }}
+                            <div class="form-text">
+                                大文件请通过邮件发送，或提供下载链接
+                            </div>
+                        </div>
+
+                        <!-- Contact Preferences -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="contact_preference" class="form-label">
+                                    <i class="fas fa-comment-dots me-1"></i>首选联系方式
+                                </label>
+                                {{ form.contact_preference(class="form-select") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="contact_time" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>方便联系时间
+                                </label>
+                                {{ form.contact_time(class="form-select") }}
+                            </div>
+                        </div>
+
+                        <!-- Privacy and Terms -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.privacy_agreement(class="form-check-input", required=true) }}
+                                <label class="form-check-label" for="privacy_agreement">
+                                    我同意 <a href="#" class="text-primary">隐私政策</a> 并了解我的信息将被安全保护 *
+                                </label>
+                                <div class="invalid-feedback">
+                                    请同意隐私政策
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.marketing_emails(class="form-check-input") }}
+                                <label class="form-check-label" for="marketing_emails">
+                                    订阅技术分享和项目动态（可选）
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>发送咨询
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 100px;">
+                <!-- Contact Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-address-card me-2"></i>联系信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="contact-item mb-3">
+                            <i class="fas fa-envelope text-primary me-3"></i>
+                            <div>
+                                <strong>邮箱</strong><br>
+                                <a href="mailto:your@email.com" class="text-decoration-none">your@email.com</a>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item mb-3">
+                            <i class="fas fa-phone text-success me-3"></i>
+                            <div>
+                                <strong>电话</strong><br>
+                                <a href="tel:+8612345678901" class="text-decoration-none">+86 123 4567 8901</a>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item mb-3">
+                            <i class="fab fa-weixin text-success me-3"></i>
+                            <div>
+                                <strong>微信</strong><br>
+                                <span class="text-muted">your_wechat_id</span>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt text-danger me-3"></i>
+                            <div>
+                                <strong>位置</strong><br>
+                                <span class="text-muted">中国·北京</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response Time -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>响应时间
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="response-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-envelope text-primary me-2"></i>邮件</span>
+                                <span class="badge bg-success">24小时内</span>
+                            </div>
+                        </div>
+                        
+                        <div class="response-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-phone text-success me-2"></i>电话</span>
+                                <span class="badge bg-warning">工作日</span>
+                            </div>
+                        </div>
+                        
+                        <div class="response-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="fab fa-weixin text-success me-2"></i>微信</span>
+                                <span class="badge bg-info">即时</span>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-3">
+                        
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            紧急项目请直接电话联系
+                        </small>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-question-circle me-2"></i>常见问题
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion accordion-flush" id="faqAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                        咨询服务是否收费？
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body small">
+                                        初步咨询完全免费，包括项目评估和技术建议。
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                        项目开发周期多长？
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body small">
+                                        根据项目复杂度，通常2-12周不等，具体时间需求分析后确定。
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                        支持远程合作吗？
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body small">
+                                        完全支持远程合作，有成熟的在线协作流程和工具。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Links -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">关注我</h6>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="https://github.com/yourusername" target="_blank" 
+                               class="btn btn-outline-dark btn-sm">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            <a href="https://linkedin.com/in/yourusername" target="_blank" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                            <a href="https://twitter.com/yourusername" target="_blank" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.feature-item {
+    padding: 1rem;
+    text-align: center;
+}
+
+.contact-item {
+    display: flex;
+    align-items: flex-start;
+}
+
+.contact-item i {
+    width: 20px;
+    margin-top: 2px;
+}
+
+.response-item {
+    padding: 0.25rem 0;
+}
+
+.accordion-button {
+    font-size: 0.9rem;
+    padding: 0.75rem 0;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--bs-light);
+    color: var(--bs-primary);
+}
+
+/* Form validation styles */
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.was-validated .form-control:valid,
+.was-validated .form-select:valid {
+    border-color: #198754;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 1.88-1.88.94-.94L3.66 1.5 2.31 2.84l-.94.94-.94-.94L0 3.2l.94.94z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+@media (max-width: 768px) {
+    .feature-item {
+        margin-bottom: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function() {
+    'use strict';
+    
+    // Custom validation messages
+    const form = document.querySelector('.needs-validation');
+    
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Scroll to first invalid field
+            const firstInvalid = form.querySelector(':invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                firstInvalid.focus();
+            }
+        }
+        
+        form.classList.add('was-validated');
+    }, false);
+    
+    // Real-time validation
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid') && this.checkValidity()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    });
+    
+    // Email validation
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.addEventListener('invalid', function() {
+            if (this.validity.valueMissing) {
+                this.setCustomValidity('请填写邮箱地址');
+            } else if (this.validity.typeMismatch) {
+                this.setCustomValidity('请输入有效的邮箱地址');
+            }
+        });
+        
+        emailInput.addEventListener('input', function() {
+            this.setCustomValidity('');
+        });
+    }
+})();
+
+// Character counter for textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const messageTextarea = document.getElementById('message');
+    if (messageTextarea) {
+        const counter = document.createElement('small');
+        counter.className = 'text-muted float-end';
+        messageTextarea.parentNode.appendChild(counter);
+        
+        function updateCounter() {
+            const length = messageTextarea.value.length;
+            counter.textContent = `${length} 字符`;
+            
+            if (length < 50) {
+                counter.className = 'text-warning float-end';
+                counter.textContent += ' (建议详细描述)';
+            } else {
+                counter.className = 'text-muted float-end';
+            }
+        }
+        
+        messageTextarea.addEventListener('input', updateCounter);
+        updateCounter();
+    }
+});
+
+// Auto-save form data to localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.needs-validation');
+    const formId = 'inquiry-form-data';
+    
+    // Load saved data
+    const savedData = localStorage.getItem(formId);
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            Object.keys(data).forEach(key => {
+                const field = form.querySelector(`[name="${key}"]`);
+                if (field && field.type !== 'hidden') {
+                    if (field.type === 'checkbox') {
+                        field.checked = data[key];
+                    } else {
+                        field.value = data[key];
+                    }
+                }
+            });
+        } catch (e) {
+            console.log('Failed to load saved form data');
+        }
+    }
+    
+    // Save data on input
+    let saveTimeout;
+    form.addEventListener('input', function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(function() {
+            const formData = new FormData(form);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'csrf_token') {
+                    data[key] = value;
+                }
+            }
+            
+            localStorage.setItem(formId, JSON.stringify(data));
+        }, 1000);
+    });
+    
+    // Clear saved data on successful submit
+    form.addEventListener('submit', function() {
+        if (form.checkValidity()) {
+            setTimeout(() => {
+                localStorage.removeItem(formId);
+            }, 1000);
+        }
+    });
+});
+</script>
+{% endblock %}

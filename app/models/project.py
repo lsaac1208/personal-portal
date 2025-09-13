@@ -332,3 +332,66 @@ class Project(db.Model):
         
         # 按使用频率排序
         return sorted(tech_count.items(), key=lambda x: x[1], reverse=True)
+    
+    @staticmethod
+    def get_project_timeline():
+        """获取项目时间线数据"""
+        projects = Project.query.filter_by(is_published=True)\
+                              .order_by(Project.start_date.desc().nullslast())\
+                              .all()
+        
+        timeline_data = []
+        for project in projects:
+            if project.start_date:
+                timeline_item = {
+                    'id': project.id,
+                    'title': project.name,
+                    'description': project.get_summary(100),
+                    'start_date': project.start_date,
+                    'completion_date': project.completion_date,
+                    'status': project.project_status,
+                    'category': project.category,
+                    'project_type': project.project_type,
+                    'tech_stack': project.get_tech_stack_list()[:5],  # 限制显示技术栈数量
+                    'featured_image': project.featured_image,
+                    'is_featured': project.is_featured,
+                    'demo_url': project.demo_url,
+                    'github_url': project.github_url,
+                    'duration_text': project.get_duration_text()
+                }
+                timeline_data.append(timeline_item)
+        
+        return timeline_data
+    
+    def get_project_milestones(self):
+        """获取项目里程碑（如果有的话）"""
+        # 这里可以扩展为更复杂的里程碑系统
+        milestones = []
+        
+        if self.start_date:
+            milestones.append({
+                'date': self.start_date,
+                'title': '项目启动',
+                'description': f'开始开发{self.name}',
+                'type': 'start'
+            })
+        
+        if self.completion_date:
+            milestones.append({
+                'date': self.completion_date,
+                'title': '项目完成',
+                'description': f'{self.name}开发完成',
+                'type': 'complete'
+            })
+        
+        # 如果项目还在进行中
+        if self.project_status == '进行中' and not self.completion_date:
+            from datetime import date
+            milestones.append({
+                'date': date.today(),
+                'title': '开发进行中',
+                'description': f'{self.name}正在积极开发中',
+                'type': 'progress'
+            })
+        
+        return sorted(milestones, key=lambda x: x['date'])

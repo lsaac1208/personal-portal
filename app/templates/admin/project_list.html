@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+
+{% block title %}项目管理 - 管理后台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-briefcase me-2 text-primary"></i>项目管理
+            </h1>
+            <p class="text-muted mb-0">管理项目作品集和展示项目</p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin.project_edit') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>新建项目
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                总项目数
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ projects|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-briefcase fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                已完成项目
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ projects|selectattr('status', 'equalto', '已完成')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                进行中项目
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ projects|selectattr('status', 'equalto', '开发中')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cogs fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                精选项目
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ projects|selectattr('is_featured', 'equalto', true)|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-star fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-search me-2"></i>搜索筛选
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">搜索关键词</label>
+                    <input type="text" class="form-control" name="search" 
+                           value="{{ current_search }}" placeholder="项目标题、描述、技术栈...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">状态筛选</label>
+                    <select class="form-select" name="status">
+                        <option value="">全部状态</option>
+                        <option value="规划中" {{ 'selected' if current_status == '规划中' }}>规划中</option>
+                        <option value="开发中" {{ 'selected' if current_status == '开发中' }}>开发中</option>
+                        <option value="测试中" {{ 'selected' if current_status == '测试中' }}>测试中</option>
+                        <option value="已完成" {{ 'selected' if current_status == '已完成' }}>已完成</option>
+                        <option value="已暂停" {{ 'selected' if current_status == '已暂停' }}>已暂停</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">分类筛选</label>
+                    <select class="form-select" name="category">
+                        <option value="">全部分类</option>
+                        <option value="Web应用" {{ 'selected' if current_category == 'Web应用' }}>Web应用</option>
+                        <option value="移动应用" {{ 'selected' if current_category == '移动应用' }}>移动应用</option>
+                        <option value="桌面应用" {{ 'selected' if current_category == '桌面应用' }}>桌面应用</option>
+                        <option value="数据分析" {{ 'selected' if current_category == '数据分析' }}>数据分析</option>
+                        <option value="机器学习" {{ 'selected' if current_category == '机器学习' }}>机器学习</option>
+                        <option value="游戏开发" {{ 'selected' if current_category == '游戏开发' }}>游戏开发</option>
+                        <option value="工具/库" {{ 'selected' if current_category == '工具/库' }}>工具/库</option>
+                        <option value="其他" {{ 'selected' if current_category == '其他' }}>其他</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">排序方式</label>
+                    <select class="form-select" name="sort">
+                        <option value="updated_desc" {{ 'selected' if current_sort == 'updated_desc' }}>更新时间↓</option>
+                        <option value="created_desc" {{ 'selected' if current_sort == 'created_desc' }}>创建时间↓</option>
+                        <option value="title_asc" {{ 'selected' if current_sort == 'title_asc' }}>标题A-Z</option>
+                        <option value="status" {{ 'selected' if current_sort == 'status' }}>按状态</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>搜索
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Projects Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-2"></i>项目列表
+            </h6>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                    <i class="fas fa-check-square me-1"></i>全选
+                </button>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cog me-1"></i>批量操作
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('publish')">
+                            <i class="fas fa-eye me-2"></i>批量发布</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('unpublish')">
+                            <i class="fas fa-eye-slash me-2"></i>取消发布</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('feature')">
+                            <i class="fas fa-star me-2"></i>设为精选</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('unfeature')">
+                            <i class="far fa-star me-2"></i>取消精选</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('archive')">
+                            <i class="fas fa-archive me-2"></i>批量归档</a></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('delete')">
+                            <i class="fas fa-trash me-2"></i>批量删除</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if projects %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th width="30">
+                                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()">
+                            </th>
+                            <th>项目名称</th>
+                            <th>类型</th>
+                            <th>状态</th>
+                            <th>技术栈</th>
+                            <th>开始时间</th>
+                            <th>完成时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="project-checkbox" value="{{ project.id }}">
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if project.featured_image %}
+                                    <img src="{{ url_for('static', filename='uploads/' + project.featured_image) }}" 
+                                         class="rounded me-2" width="40" height="40" style="object-fit: cover;">
+                                    {% endif %}
+                                    <div>
+                                        <div class="font-weight-bold">{{ project.title }}</div>
+                                        {% if project.is_featured %}
+                                        <span class="badge badge-warning">精选</span>
+                                        {% endif %}
+                                        {% if not project.is_public %}
+                                        <span class="badge badge-secondary">私密</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-info">{{ project.category or '未分类' }}</span>
+                            </td>
+                            <td>
+                                {% set status_colors = {
+                                    '规划中': 'secondary',
+                                    '开发中': 'primary',
+                                    '测试中': 'warning',
+                                    '已完成': 'success',
+                                    '已暂停': 'info',
+                                    '已取消': 'danger'
+                                } %}
+                                <span class="badge badge-{{ status_colors.get(project.status, 'secondary') }}">
+                                    {{ project.status or '未设置' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if project.tech_stack %}
+                                <div class="tech-stack-tags">
+                                    {% for tech in project.tech_stack[:3] %}
+                                    <span class="badge badge-light me-1">{{ tech }}</span>
+                                    {% endfor %}
+                                    {% if project.tech_stack|length > 3 %}
+                                    <span class="text-muted">+{{ project.tech_stack|length - 3 }}...</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">未设置</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.start_date %}
+                                {{ project.start_date.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                <span class="text-muted">未设置</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.completion_date %}
+                                {{ project.completion_date.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                <span class="text-muted">进行中</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('content.project_detail', id=project.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="查看">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.project_edit', id=project.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            title="删除" onclick="confirmDelete({{ project.id }}, '{{ project.title }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="项目分页">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.project_list', page=pagination.prev_num) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.project_list', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.project_list', page=pagination.next_num) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">暂无项目</h5>
+                <p class="text-muted mb-4">开始创建您的第一个项目吧！</p>
+                <a href="{{ url_for('admin.project_edit') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>新建项目
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>确认删除
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除项目 <strong id="deleteProjectTitle"></strong> 吗？</p>
+                <p class="text-muted small">此操作无法撤销，请谨慎操作。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">删除项目</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.tech-stack-tags {
+    max-width: 200px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let projectToDelete = null;
+
+// 删除确认
+function confirmDelete(projectId, projectTitle) {
+    projectToDelete = projectId;
+    document.getElementById('deleteProjectTitle').textContent = projectTitle;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (projectToDelete) {
+        // 发送删除请求
+        fetch(`/admin/api/project/delete/${projectToDelete}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 成功删除，刷新页面
+                location.reload();
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除过程中发生错误');
+        });
+
+        // 关闭模态框
+        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+    }
+});
+
+// 全选/取消全选
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.project-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBulkActionButtons();
+}
+
+function selectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    selectAllCheckbox.checked = true;
+    toggleSelectAll();
+}
+
+// 更新批量操作按钮状态
+function updateBulkActionButtons() {
+    const checkedBoxes = document.querySelectorAll('.project-checkbox:checked');
+    const bulkActionBtn = document.querySelector('.dropdown-toggle');
+    
+    if (checkedBoxes.length > 0) {
+        bulkActionBtn.classList.remove('btn-outline-secondary');
+        bulkActionBtn.classList.add('btn-primary');
+        bulkActionBtn.innerHTML = `<i class="fas fa-cog me-1"></i>批量操作 (${checkedBoxes.length})`;
+    } else {
+        bulkActionBtn.classList.remove('btn-primary');
+        bulkActionBtn.classList.add('btn-outline-secondary');
+        bulkActionBtn.innerHTML = '<i class="fas fa-cog me-1"></i>批量操作';
+    }
+}
+
+// 批量操作
+function bulkAction(action) {
+    const checkedBoxes = document.querySelectorAll('.project-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('请选择要操作的项目');
+        return;
+    }
+    
+    const projectIds = Array.from(checkedBoxes).map(cb => cb.value);
+    let confirmMessage = '';
+    
+    switch(action) {
+        case 'publish':
+            confirmMessage = `确定要发布选中的 ${projectIds.length} 个项目吗？`;
+            break;
+        case 'unpublish':
+            confirmMessage = `确定要取消发布选中的 ${projectIds.length} 个项目吗？`;
+            break;
+        case 'feature':
+            confirmMessage = `确定要将选中的 ${projectIds.length} 个项目设为精选吗？`;
+            break;
+        case 'unfeature':
+            confirmMessage = `确定要取消选中 ${projectIds.length} 个项目的精选状态吗？`;
+            break;
+        case 'archive':
+            confirmMessage = `确定要归档选中的 ${projectIds.length} 个项目吗？`;
+            break;
+        case 'delete':
+            confirmMessage = `确定要删除选中的 ${projectIds.length} 个项目吗？此操作不可撤销！`;
+            break;
+    }
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // 创建表单数据
+    const formData = new FormData();
+    projectIds.forEach(id => formData.append('project_ids', id));
+    
+    // 发送请求
+    fetch(`/admin/project/bulk-${action}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('操作失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作过程中发生错误');
+    });
+}
+
+// 监听复选框变化
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听单个复选框变化
+    document.querySelectorAll('.project-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActionButtons);
+    });
+    
+    // 初始化批量操作按钮状态
+    updateBulkActionButtons();
+    
+    // 初始化数据表格（如果有数据）
+    if ($('#dataTable tbody tr').length > 0) {
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/zh.json"
+            },
+            "order": [[ 5, "desc" ]], // 按开始时间降序排列（因为增加了复选框列）
+            "pageLength": 10,
+            "columnDefs": [
+                { "orderable": false, "targets": [0, 7] } // 复选框和操作列不可排序
+            ]
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑客户' if customer else '创建客户' }} - CRM系统{% endblock %}
+{% block meta_description %}{{ '编辑客户信息' if customer else '创建新客户' }}，完善客户档案和联系信息。{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.form-section {
+    background: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-section h5 {
+    color: var(--bs-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--bs-primary);
+}
+
+.form-floating .form-control:focus ~ label,
+.form-floating .form-control:not(:placeholder-shown) ~ label {
+    color: var(--bs-primary);
+}
+
+.tag-input-container {
+    position: relative;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    z-index: 1000;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.tag-suggestion {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--bs-light);
+}
+
+.tag-suggestion:hover {
+    background-color: var(--bs-light);
+}
+
+.tag-suggestion:last-child {
+    border-bottom: none;
+}
+
+.tag-display {
+    margin-top: 0.5rem;
+}
+
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--bs-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    margin: 0.125rem;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0;
+}
+
+.form-help {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+    margin-top: 0.25rem;
+}
+
+.required-indicator {
+    color: var(--bs-danger);
+}
+
+.form-actions {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .form-section {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .tag-suggestions {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .tag-suggestion:hover {
+    background-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .form-actions {
+    background-color: var(--bs-gray-800);
+}
+
+@media (max-width: 768px) {
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .form-header {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="form-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">{{ '编辑客户' if customer else '创建客户' }}</h1>
+                    <p class="mb-0 opacity-90">{{ '更新客户详细信息和联系方式' if customer else '添加新的客户档案' }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('crm.customer_detail', id=customer.id) if customer else url_for('crm.customer_list') }}" 
+                       class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <form method="POST" id="customerForm">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h5><i class="fas fa-user me-2"></i>基础信息</h5>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ customer.name if customer }}" required>
+                                <label for="name">客户姓名 <span class="required-indicator">*</span></label>
+                            </div>
+                            <div class="form-help">客户的真实姓名或称呼</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ customer.email if customer }}" required>
+                                <label for="email">邮箱地址 <span class="required-indicator">*</span></label>
+                            </div>
+                            <div class="form-help">主要联系邮箱</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ customer.phone if customer }}">
+                                <label for="phone">联系电话</label>
+                            </div>
+                            <div class="form-help">手机或固定电话</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="customer_type" name="customer_type">
+                                    <option value="潜在客户" {{ 'selected' if customer and customer.customer_type == '潜在客户' else '' }}>潜在客户</option>
+                                    <option value="意向客户" {{ 'selected' if customer and customer.customer_type == '意向客户' else '' }}>意向客户</option>
+                                    <option value="签约客户" {{ 'selected' if customer and customer.customer_type == '签约客户' else '' }}>签约客户</option>
+                                    <option value="流失客户" {{ 'selected' if customer and customer.customer_type == '流失客户' else '' }}>流失客户</option>
+                                </select>
+                                <label for="customer_type">客户类型</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="value_level" name="value_level">
+                                    <option value="高" {{ 'selected' if customer and customer.value_level == '高' else '' }}>高价值</option>
+                                    <option value="中" {{ 'selected' if customer and customer.value_level == '中' else 'selected' }}>中价值</option>
+                                    <option value="低" {{ 'selected' if customer and customer.value_level == '低' else '' }}>低价值</option>
+                                </select>
+                                <label for="value_level">价值等级</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="industry" name="industry" 
+                                       value="{{ customer.industry if customer }}">
+                                <label for="industry">所属行业</label>
+                            </div>
+                            <div class="form-help">如：互联网、金融、教育等</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Information -->
+                <div class="form-section">
+                    <h5><i class="fas fa-building me-2"></i>公司信息</h5>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="company" name="company" 
+                                       value="{{ customer.company if customer }}">
+                                <label for="company">公司名称</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       value="{{ customer.title if customer }}">
+                                <label for="title">职位</label>
+                            </div>
+                            <div class="form-help">在公司的职务或职位</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="company_size" name="company_size">
+                                    <option value="">选择规模</option>
+                                    <option value="小型(1-50)" {{ 'selected' if customer and customer.company_size == '小型(1-50)' else '' }}>小型(1-50人)</option>
+                                    <option value="中型(51-200)" {{ 'selected' if customer and customer.company_size == '中型(51-200)' else '' }}>中型(51-200人)</option>
+                                    <option value="大型(201+)" {{ 'selected' if customer and customer.company_size == '大型(201+)' else '' }}>大型(201人以上)</option>
+                                </select>
+                                <label for="company_size">公司规模</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="url" class="form-control" id="company_website" name="company_website" 
+                                       value="{{ customer.company_website if customer }}">
+                                <label for="company_website">公司网站</label>
+                            </div>
+                            <div class="form-help">公司官方网站地址</div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="company_address" name="company_address" 
+                                          style="height: 80px;">{{ customer.company_address if customer }}</textarea>
+                                <label for="company_address">公司地址</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Preferences -->
+                <div class="form-section">
+                    <h5><i class="fas fa-comments me-2"></i>沟通偏好</h5>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="preferred_contact" name="preferred_contact">
+                                    <option value="邮件" {{ 'selected' if customer and customer.preferred_contact == '邮件' else 'selected' }}>邮件</option>
+                                    <option value="电话" {{ 'selected' if customer and customer.preferred_contact == '电话' else '' }}>电话</option>
+                                    <option value="微信" {{ 'selected' if customer and customer.preferred_contact == '微信' else '' }}>微信</option>
+                                    <option value="会议" {{ 'selected' if customer and customer.preferred_contact == '会议' else '' }}>会议</option>
+                                </select>
+                                <label for="preferred_contact">偏好联系方式</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="contact_frequency" name="contact_frequency">
+                                    <option value="按需" {{ 'selected' if customer and customer.contact_frequency == '按需' else 'selected' }}>按需联系</option>
+                                    <option value="每周" {{ 'selected' if customer and customer.contact_frequency == '每周' else '' }}>每周</option>
+                                    <option value="每月" {{ 'selected' if customer and customer.contact_frequency == '每月' else '' }}>每月</option>
+                                    <option value="每季度" {{ 'selected' if customer and customer.contact_frequency == '每季度' else '' }}>每季度</option>
+                                </select>
+                                <label for="contact_frequency">联系频率</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="notes" name="notes" 
+                                          style="height: 100px;">{{ customer.notes if customer }}</textarea>
+                                <label for="notes">客户备注</label>
+                            </div>
+                            <div class="form-help">记录客户的特殊需求、偏好或其他重要信息</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="form-section">
+                    <h5><i class="fas fa-tags me-2"></i>客户标签</h5>
+                    
+                    <div class="tag-input-container">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   value="{{ customer.get_tags_list() | join(', ') if customer else '' }}"
+                                   autocomplete="off">
+                            <label for="tags">标签</label>
+                        </div>
+                        <div class="form-help">用逗号分隔多个标签，如：VIP, 技术型, 决策者</div>
+                        
+                        <div class="tag-suggestions" id="tagSuggestions">
+                            <!-- 常用标签建议 -->
+                            <div class="tag-suggestion" onclick="addSuggestedTag('VIP')">VIP</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('技术型')">技术型</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('决策者')">决策者</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('预算充足')">预算充足</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('时间紧迫')">时间紧迫</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('价格敏感')">价格敏感</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('长期合作')">长期合作</div>
+                            <div class="tag-suggestion" onclick="addSuggestedTag('推荐客户')">推荐客户</div>
+                        </div>
+                        
+                        <div class="tag-display" id="tagDisplay"></div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>
+                            {{ '更新客户' if customer else '创建客户' }}
+                        </button>
+                        
+                        <a href="{{ url_for('crm.customer_detail', id=customer.id) if customer else url_for('crm.customer_list') }}" 
+                           class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>取消
+                        </a>
+                        
+                        {% if customer %}
+                        <button type="button" class="btn btn-outline-danger btn-lg" onclick="deleteCustomer()">
+                            <i class="fas fa-trash me-2"></i>删除
+                        </button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            带有 <span class="required-indicator">*</span> 的字段为必填项
+                        </small>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tag input functionality
+const tagInput = document.getElementById('tags');
+const tagSuggestions = document.getElementById('tagSuggestions');
+const tagDisplay = document.getElementById('tagDisplay');
+
+// Show/hide tag suggestions
+tagInput.addEventListener('focus', function() {
+    tagSuggestions.style.display = 'block';
+});
+
+tagInput.addEventListener('blur', function(e) {
+    // Delay hiding to allow clicking on suggestions
+    setTimeout(() => {
+        if (!tagSuggestions.contains(e.relatedTarget)) {
+            tagSuggestions.style.display = 'none';
+        }
+    }, 200);
+});
+
+// Add suggested tag
+function addSuggestedTag(tag) {
+    const currentTags = tagInput.value.split(',').map(t => t.trim()).filter(t => t);
+    if (!currentTags.includes(tag)) {
+        currentTags.push(tag);
+        tagInput.value = currentTags.join(', ');
+        updateTagDisplay();
+    }
+    tagSuggestions.style.display = 'none';
+    tagInput.focus();
+}
+
+// Update tag display
+function updateTagDisplay() {
+    const tags = tagInput.value.split(',').map(t => t.trim()).filter(t => t);
+    tagDisplay.innerHTML = '';
+    
+    tags.forEach((tag, index) => {
+        const tagElement = document.createElement('span');
+        tagElement.className = 'tag-item';
+        tagElement.innerHTML = `
+            ${tag}
+            <button type="button" class="tag-remove" onclick="removeTag(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        tagDisplay.appendChild(tagElement);
+    });
+}
+
+// Remove tag
+function removeTag(index) {
+    const tags = tagInput.value.split(',').map(t => t.trim()).filter(t => t);
+    tags.splice(index, 1);
+    tagInput.value = tags.join(', ');
+    updateTagDisplay();
+}
+
+// Initialize tag display
+tagInput.addEventListener('input', updateTagDisplay);
+if (tagInput.value) {
+    updateTagDisplay();
+}
+
+// Form validation
+document.getElementById('customerForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    
+    if (!name) {
+        alert('请输入客户姓名');
+        e.preventDefault();
+        document.getElementById('name').focus();
+        return;
+    }
+    
+    if (!email) {
+        alert('请输入邮箱地址');
+        e.preventDefault();
+        document.getElementById('email').focus();
+        return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('请输入有效的邮箱地址');
+        e.preventDefault();
+        document.getElementById('email').focus();
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+    submitBtn.disabled = true;
+    
+    // Re-enable button after 10 seconds as fallback
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 10000);
+});
+
+// Delete customer
+{% if customer %}
+function deleteCustomer() {
+    if (confirm('确定要删除这个客户吗？此操作不可撤销，将删除客户的所有相关数据。')) {
+        if (confirm('请再次确认：删除客户 "{{ customer.name }}" 及其所有相关数据？')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("crm.delete_customer", id=customer.id) }}';
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = 'csrf_token';
+            csrfToken.value = '{{ csrf_token() }}';
+            form.appendChild(csrfToken);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+{% endif %}
+
+// Auto-complete for industry field
+const industryField = document.getElementById('industry');
+const commonIndustries = [
+    '互联网', '软件开发', '金融', '教育', '医疗健康', '电商', '制造业', 
+    '房地产', '媒体广告', '游戏', '物流', '餐饮', '零售', '咨询服务'
+];
+
+industryField.addEventListener('input', function() {
+    // Simple auto-complete logic could be added here
+});
+
+// Phone number formatting
+document.getElementById('phone').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // Simple formatting for Chinese mobile numbers
+    if (value.length === 11 && value.startsWith('1')) {
+        e.target.value = value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    } else {
+        e.target.value = value;
+    }
+});
+
+// Website URL validation and formatting
+document.getElementById('company_website').addEventListener('blur', function(e) {
+    let value = e.target.value.trim();
+    
+    if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
+        e.target.value = 'https://' + value;
+    }
+});
+
+// Character count for notes
+const notesField = document.getElementById('notes');
+const maxLength = 1000;
+
+notesField.addEventListener('input', function() {
+    const remaining = maxLength - this.value.length;
+    const helpText = this.parentNode.nextElementSibling;
+    
+    if (remaining < 100) {
+        helpText.innerHTML = `记录客户的特殊需求、偏好或其他重要信息 (还可输入${remaining}个字符)`;
+        if (remaining < 0) {
+            helpText.style.color = 'var(--bs-danger)';
+        } else if (remaining < 50) {
+            helpText.style.color = 'var(--bs-warning)';
+        }
+    }
+});
+
+// Auto-save draft (optional feature)
+let autoSaveTimer;
+function autoSave() {
+    // This could save a draft to localStorage
+    const formData = new FormData(document.getElementById('customerForm'));
+    const data = Object.fromEntries(formData);
+    localStorage.setItem('customerDraft', JSON.stringify(data));
+}
+
+// Auto-save every 30 seconds
+document.getElementById('customerForm').addEventListener('input', function() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSave, 30000);
+});
+
+// Load draft on page load
+window.addEventListener('load', function() {
+    {% if not customer %}
+    const draft = localStorage.getItem('customerDraft');
+    if (draft && confirm('发现未保存的客户信息草稿，是否要载入？')) {
+        const data = JSON.parse(draft);
+        Object.keys(data).forEach(key => {
+            const field = document.querySelector(`[name="${key}"]`);
+            if (field) {
+                field.value = data[key];
+            }
+        });
+        updateTagDisplay();
+    }
+    {% endif %}
+});
+
+// Clear draft on successful submission
+document.getElementById('customerForm').addEventListener('submit', function() {
+    localStorage.removeItem('customerDraft');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}咨询详情 - {{ inquiry.subject }} - 管理后台{% endblock %}
+{% block meta_description %}查看和处理客户咨询详情，提供专业回复和状态跟踪。{% endblock %}
+
+{% block extra_css %}
+<style>
+.inquiry-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.info-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.info-row {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.status-badge {
+    font-size: 0.875em;
+    padding: 0.5em 1em;
+    border-radius: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-新咨询 { background: #ffc107; color: #000; }
+.status-处理中 { background: #17a2b8; color: #fff; }
+.status-等待客户 { background: #6f42c1; color: #fff; }
+.status-已报价 { background: #28a745; color: #fff; }
+.status-已成交 { background: #28a745; color: #fff; }
+.status-已拒绝 { background: #dc3545; color: #fff; }
+.status-已关闭 { background: #6c757d; color: #fff; }
+
+.priority-高 { color: #dc3545; }
+.priority-中 { color: #ffc107; }
+.priority-低 { color: #28a745; }
+
+.response-form {
+    background: #f8f9fa;
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 3rem;
+    padding-bottom: 2rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+    height: 2rem;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.25rem;
+    width: 2rem;
+    height: 2rem;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.client-card {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="inquiry-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="mb-2">{{ inquiry.subject }}</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="status-badge status-{{ inquiry.status }}">
+                        {{ inquiry.status }}
+                    </span>
+                    {% if inquiry.priority %}
+                    <span class="priority-{{ inquiry.priority }}">
+                        <i class="fas fa-flag me-1"></i>{{ inquiry.priority }}优先级
+                    </span>
+                    {% endif %}
+                    <span>
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ inquiry.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </span>
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.inquiry_list') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-1"></i>返回列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Inquiry Details -->
+        <div class="col-lg-8">
+            <!-- Client Information -->
+            <div class="info-card card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>客户信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <div class="info-label">客户姓名</div>
+                                <div>{{ inquiry.client_name }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">邮箱地址</div>
+                                <div>
+                                    <a href="mailto:{{ inquiry.client_email }}" class="text-decoration-none">
+                                        {{ inquiry.client_email }}
+                                    </a>
+                                </div>
+                            </div>
+                            {% if inquiry.client_phone %}
+                            <div class="info-row">
+                                <div class="info-label">联系电话</div>
+                                <div>
+                                    <a href="tel:{{ inquiry.client_phone }}" class="text-decoration-none">
+                                        {{ inquiry.client_phone }}
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if inquiry.client_company %}
+                            <div class="info-row">
+                                <div class="info-label">公司/机构</div>
+                                <div>{{ inquiry.client_company }}</div>
+                            </div>
+                            {% endif %}
+                            {% if inquiry.client_position %}
+                            <div class="info-row">
+                                <div class="info-label">职位</div>
+                                <div>{{ inquiry.client_position }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="info-row">
+                                <div class="info-label">联系偏好</div>
+                                <div>{{ inquiry.contact_preference }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">方便时间</div>
+                                <div>{{ inquiry.contact_time }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="info-card card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-project-diagram me-2"></i>项目信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-label">咨询类型</div>
+                        <div>{{ inquiry.inquiry_type }}</div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">详细需求</div>
+                        <div class="mt-2">
+                            <div class="bg-light p-3 rounded">
+                                {{ inquiry.description | nl2br | safe }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if inquiry.budget_range %}
+                    <div class="info-row">
+                        <div class="info-label">预算范围</div>
+                        <div>{{ inquiry.budget_range }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if inquiry.timeline %}
+                    <div class="info-row">
+                        <div class="info-label">期望时间</div>
+                        <div>{{ inquiry.timeline }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if inquiry.tech_requirements %}
+                    <div class="info-row">
+                        <div class="info-label">技术要求</div>
+                        <div>{{ inquiry.tech_requirements }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if inquiry.additional_info %}
+                    <div class="info-row">
+                        <div class="info-label">补充信息</div>
+                        <div>{{ inquiry.additional_info | nl2br | safe }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Response History -->
+            {% if inquiry.responses %}
+            <div class="info-card card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>回复历史
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for response in inquiry.responses %}
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-info">
+                            <i class="fas fa-reply"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">管理员回复</h6>
+                                <small class="text-muted">
+                                    {{ response.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                            </div>
+                            <div class="bg-light p-3 rounded mb-2">
+                                {{ response.response | nl2br | safe }}
+                            </div>
+                            {% if response.estimated_budget or response.estimated_timeline %}
+                            <div class="row">
+                                {% if response.estimated_budget %}
+                                <div class="col-md-6">
+                                    <small class="text-muted">预估费用: {{ response.estimated_budget }}</small>
+                                </div>
+                                {% endif %}
+                                {% if response.estimated_timeline %}
+                                <div class="col-md-6">
+                                    <small class="text-muted">预估周期: {{ response.estimated_timeline }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Actions and Status -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="info-card card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>快速操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="mailto:{{ inquiry.client_email }}?subject=Re: {{ inquiry.subject }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>发送邮件
+                        </a>
+                        {% if inquiry.client_phone %}
+                        <a href="tel:{{ inquiry.client_phone }}" class="btn btn-outline-success">
+                            <i class="fas fa-phone me-2"></i>拨打电话
+                        </a>
+                        {% endif %}
+                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#notesModal">
+                            <i class="fas fa-sticky-note me-2"></i>添加备注
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Update Form -->
+            <div class="info-card card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>状态管理
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.inquiry_update', id=inquiry.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-select") }}
+                        </div>
+
+                        {% if form.priority %}
+                        <div class="mb-3">
+                            {{ form.priority.label(class="form-label") }}
+                            {{ form.priority(class="form-select") }}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            {{ form.response.label(class="form-label") }}
+                            {{ form.response(class="form-control", rows="5", placeholder="输入回复内容...") }}
+                            <small class="form-text text-muted">回复内容将会发送给客户</small>
+                        </div>
+
+                        {% if form.estimated_budget %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.estimated_budget.label(class="form-label") }}
+                                {{ form.estimated_budget(class="form-control", placeholder="如：3-5万元") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.estimated_timeline.label(class="form-label") }}
+                                {{ form.estimated_timeline(class="form-control", placeholder="如：2-3个月") }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if form.next_contact_date %}
+                        <div class="mb-3">
+                            {{ form.next_contact_date.label(class="form-label") }}
+                            {{ form.next_contact_date(class="form-control") }}
+                        </div>
+                        {% endif %}
+
+                        {% if form.internal_notes %}
+                        <div class="mb-3">
+                            {{ form.internal_notes.label(class="form-label") }}
+                            {{ form.internal_notes(class="form-control", rows="3", placeholder="内部备注（客户不可见）") }}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3 form-check">
+                            {{ form.send_email(class="form-check-input") }}
+                            {{ form.send_email.label(class="form-check-label") }}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>更新状态
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="info-card card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>咨询统计
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-0">{{ inquiry.inquiry_number or 'N/A' }}</h4>
+                                <small class="text-muted">咨询编号</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success mb-0">
+                                {{ (inquiry.created_at.today() - inquiry.created_at.date()).days }}天
+                            </h4>
+                            <small class="text-muted">已存在</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesModalLabel">添加备注</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="noteContent" class="form-label">备注内容</label>
+                        <textarea class="form-control" id="noteContent" rows="4" placeholder="输入备注信息..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary">保存备注</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const responseTextarea = document.getElementById('response');
+    const sendEmailCheckbox = document.getElementById('send_email');
+    
+    if (responseTextarea && sendEmailCheckbox) {
+        responseTextarea.addEventListener('input', function() {
+            if (this.value.trim().length > 0) {
+                sendEmailCheckbox.checked = true;
+            }
+        });
+    }
+    
+    // Auto-save notes
+    const noteContent = document.getElementById('noteContent');
+    if (noteContent) {
+        const saveKey = `inquiry-notes-${window.location.pathname}`;
+        
+        // Load saved notes
+        const savedNotes = localStorage.getItem(saveKey);
+        if (savedNotes) {
+            noteContent.value = savedNotes;
+        }
+        
+        // Save on input
+        noteContent.addEventListener('input', function() {
+            localStorage.setItem(saveKey, this.value);
+        });
+    }
+});
+</script>
+{% endblock %}

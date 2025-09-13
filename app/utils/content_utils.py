@@ -36,7 +36,7 @@ def render_markdown(text):
         'codehilite': {
             'css_class': 'highlight',
             'use_pygments': True,
-            'pygments_style': 'github'
+            'pygments_style': 'default'
         },
         'toc': {
             'anchorlink': True

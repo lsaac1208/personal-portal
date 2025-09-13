@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}管理后台 - 个人门户网站{% endblock %}
+{% block meta_description %}个人门户网站管理后台，内容管理、项目管理、咨询管理统一控制面板。{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    border-radius: 1rem;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.stat-change {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.stat-change.positive {
+    color: #10b981;
+}
+
+.stat-change.negative {
+    color: #ef4444;
+}
+
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+
+.activity-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background-color: var(--bs-light);
+    border-radius: 0.5rem;
+    border-bottom-color: transparent;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.quick-actions .btn {
+    border-radius: 0.75rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.quick-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.table-actions .btn {
+    padding: 0.25rem 0.5rem;
+    margin: 0 0.1rem;
+}
+
+.badge-status {
+    padding: 0.35em 0.8em;
+    border-radius: 0.5rem;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .dashboard-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .activity-item:hover {
+    background-color: var(--bs-gray-800);
+}
+
+@media (max-width: 768px) {
+    .stat-card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">欢迎回来！</h1>
+                    <p class="text-muted mb-0">今天是 2025年9月10日</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" id="refreshData">
+                        <i class="fas fa-sync-alt me-2"></i>刷新数据
+                    </button>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-success" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>查看网站
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number" data-count="{{ total_content or 0 }}">{{ total_content or 0 }}</div>
+                        <div class="stat-label">总文章数</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>+{{ new_content_this_month or 0 }} 本月
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number" data-count="{{ total_projects or 0 }}">{{ total_projects or 0 }}</div>
+                        <div class="stat-label">项目作品</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>+{{ new_projects_this_month or 0 }} 本月
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-briefcase fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number" data-count="{{ total_inquiries or 0 }}">{{ total_inquiries or 0 }}</div>
+                        <div class="stat-label">咨询询问</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>+{{ new_inquiries_this_week or 0 }} 本周
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-envelope fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card" style="--gradient-start: #43e97b; --gradient-end: #38f9d7;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number" data-count="{{ total_views or 0 }}">{{ total_views or 0 }}</div>
+                        <div class="stat-label">总浏览量</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>+{{ views_today or 0 }} 今日
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-eye fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>快速操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions d-grid gap-3">
+                        <a href="{{ url_for('admin.content_create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>新建文章
+                        </a>
+                        <a href="{{ url_for('admin.project_edit') }}" class="btn btn-success">
+                            <i class="fas fa-project-diagram me-2"></i>添加项目
+                        </a>
+                        <a href="{{ url_for('admin.inquiry_list') }}" class="btn btn-info">
+                            <i class="fas fa-envelope me-2"></i>查看咨询
+                            {% if pending_inquiries %}
+                            <span class="badge bg-danger">{{ pending_inquiries }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('admin.content_manage') }}" class="btn btn-secondary">
+                            <i class="fas fa-chart-line me-2"></i>内容管理
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-8 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2 text-info"></i>最近活动
+                        </h5>
+                        <a href="{{ url_for('admin.content_list') }}" class="btn btn-sm btn-outline-primary">
+                            查看全部
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="activity-list">
+                        {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        <div class="activity-item d-flex align-items-center">
+                            <div class="activity-icon bg-{{ activity.type_color }} text-white">
+                                <i class="fas fa-{{ activity.icon }}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-medium">{{ activity.title }}</div>
+                                <small class="text-muted">{{ activity.description }}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ activity.created_at.strftime('%m月%d日') if activity.created_at else '最近' }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="activity-item text-center py-4">
+                            <i class="fas fa-clock text-muted fa-2x mb-3"></i>
+                            <p class="text-muted mb-0">暂无活动记录</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Content Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-header bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-file-alt me-2 text-primary"></i>内容概览
+                        </h5>
+                        <a href="{{ url_for('admin.content_manage') }}" class="btn btn-sm btn-outline-primary">
+                            管理内容
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if latest_content %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>标题</th>
+                                    <th>分类</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for content in latest_content %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ get_category_emoji(content.category) }}</span>
+                                            <div>
+                                                <div class="fw-medium">{{ content.title | truncate(30) }}</div>
+                                                <small class="text-muted">{{ content.created_at.strftime('%m月%d日') if content.created_at else '最近' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ content.category }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-status bg-{{ 'success' if content.status == '已发布' else 'warning' }}">
+                                            {{ content.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a href="{{ url_for('content.detail', id=content.id) }}" class="btn btn-sm btn-outline-primary" title="查看">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin.content_edit', id=content.id) }}" class="btn btn-sm btn-outline-secondary" title="编辑">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt text-muted fa-3x mb-3"></i>
+                        <h6 class="text-muted">还没有任何内容</h6>
+                        <a href="{{ url_for('admin.content_create') }}" class="btn btn-primary btn-sm mt-2">
+                            <i class="fas fa-plus me-1"></i>创建第一篇文章
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-header bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-briefcase me-2 text-success"></i>项目概览
+                        </h5>
+                        <a href="{{ url_for('admin.project_list') }}" class="btn btn-sm btn-outline-success">
+                            管理项目
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if latest_projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>项目名</th>
+                                    <th>类型</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in latest_projects %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-project-diagram text-success me-2"></i>
+                                            <div>
+                                                <div class="fw-medium">{{ project.name | truncate(30) }}</div>
+                                                <small class="text-muted">{{ project.created_at.strftime('%m月%d日') if project.created_at else '最近' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ project.type }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-status bg-{{ 'success' if project.status == '已完成' else 'warning' if project.status == '开发中' else 'secondary' }}">
+                                            {{ project.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a href="{{ url_for('content.project_detail', id=project.id) }}" class="btn btn-sm btn-outline-primary" title="查看">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin.project_edit', id=project.id) }}" class="btn btn-sm btn-outline-secondary" title="编辑">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-briefcase text-muted fa-3x mb-3"></i>
+                        <h6 class="text-muted">还没有任何项目</h6>
+                        <a href="{{ url_for('admin.project_edit') }}" class="btn btn-success btn-sm mt-2">
+                            <i class="fas fa-plus me-1"></i>添加第一个项目
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card dashboard-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2 text-info"></i>系统状态
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 col-6">
+                            <div class="mb-3">
+                                <i class="fas fa-database fa-2x text-success mb-2"></i>
+                                <h6>数据库</h6>
+                                <span class="badge bg-success">正常</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="mb-3">
+                                <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                                <h6>邮件服务</h6>
+                                <span class="badge bg-success">正常</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="mb-3">
+                                <i class="fas fa-cloud fa-2x text-success mb-2"></i>
+                                <h6>存储空间</h6>
+                                <span class="badge bg-success">78% 可用</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="mb-3">
+                                <i class="fas fa-tachometer-alt fa-2x text-success mb-2"></i>
+                                <h6>响应时间</h6>
+                                <span class="badge bg-success">< 200ms</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animated counters
+    const counters = document.querySelectorAll('.stat-number[data-count]');
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-count'));
+        let current = 0;
+        const increment = Math.ceil(target / 50);
+        
+        const updateCounter = () => {
+            if (current < target) {
+                current += increment;
+                if (current > target) current = target;
+                counter.textContent = current.toLocaleString();
+                requestAnimationFrame(updateCounter);
+            }
+        };
+        
+        // Start animation with delay
+        setTimeout(updateCounter, Math.random() * 500);
+    });
+    
+    // Refresh data
+    document.getElementById('refreshData').addEventListener('click', function() {
+        const btn = this;
+        const icon = btn.querySelector('i');
+        const originalText = btn.innerHTML;
+        
+        // Show loading state
+        btn.disabled = true;
+        icon.classList.add('fa-spin');
+        
+        // Simulate data refresh
+        setTimeout(() => {
+            btn.disabled = false;
+            icon.classList.remove('fa-spin');
+            
+            // Show success feedback
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>已更新';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success');
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-primary');
+            }, 2000);
+        }, 1500);
+    });
+    
+    // Real-time clock
+    function updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('zh-CN');
+        const clockElement = document.querySelector('.current-time');
+        if (clockElement) {
+            clockElement.textContent = timeStr;
+        }
+    }
+    
+    // Update clock every second
+    setInterval(updateClock, 1000);
+    updateClock();
+    
+    // Auto-refresh data every 5 minutes
+    setInterval(() => {
+        // Silently refresh data in background
+        fetch('/admin/api/dashboard-stats')
+            .then(response => response.json())
+            .then(data => {
+                // Update counters with new data
+                counters.forEach(counter => {
+                    const key = counter.closest('.stat-card').dataset.stat;
+                    if (data[key] !== undefined) {
+                        counter.setAttribute('data-count', data[key]);
+                        counter.textContent = data[key].toLocaleString();
+                    }
+                });
+            })
+            .catch(error => console.log('Background refresh failed:', error));
+    }, 5 * 60 * 1000);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Alt + N for new content
+    if (e.altKey && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = '{{ url_for("admin.content_create") }}';
+    }
+    
+    // Alt + P for new project
+    if (e.altKey && e.key === 'p') {
+        e.preventDefault();
+        window.location.href = '{{ url_for("admin.project_edit") }}';
+    }
+    
+    // Alt + I for inquiries
+    if (e.altKey && e.key === 'i') {
+        e.preventDefault();
+        window.location.href = '{{ url_for("admin.inquiry_list") }}';
+    }
+    
+    // Alt + S for site view
+    if (e.altKey && e.key === 's') {
+        e.preventDefault();
+        window.open('{{ url_for("main.index") }}', '_blank');
+    }
+});
+</script>
+{% endblock %}

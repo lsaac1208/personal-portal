@@ -1,0 +1,628 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if query %}
+搜索"{{ query }}"的结果 - 个人门户网站
+{% else %}
+搜索结果 - 个人门户网站
+{% endif %}
+{% endblock %}
+
+{% block meta_description %}
+{% if query %}
+搜索"{{ query }}"的相关内容，包括技术文章、项目作品和解决方案。
+{% else %}
+搜索网站内容，找到您需要的技术文章、项目案例和解决方案。
+{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-3">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> 首页
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if query %}
+                搜索"{{ query }}"
+                {% else %}
+                搜索结果
+                {% endif %}
+            </li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center mb-4">
+                <h1 class="h2">
+                    <i class="fas fa-search text-primary me-2"></i>
+                    {% if query %}
+                    搜索结果：<span class="text-primary">"{{ query }}"</span>
+                    {% else %}
+                    搜索结果
+                    {% endif %}
+                </h1>
+                {% if total_results is defined %}
+                <p class="text-muted">
+                    {% if total_results > 0 %}
+                    找到 <strong>{{ total_results }}</strong> 个相关结果
+                    {% else %}
+                    未找到相关结果
+                    {% endif %}
+                    {% if search_time is defined %}
+                    （用时 {{ "%.2f"|format(search_time) }} 秒）
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Search Form -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-8">
+                    <form method="GET" action="{{ url_for('content.search') }}" class="search-form">
+                        <div class="input-group input-group-lg">
+                            <input type="text" class="form-control" name="q" 
+                                   value="{{ query or '' }}" placeholder="输入关键词搜索..."
+                                   autofocus>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i> 搜索
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Search Filters -->
+            {% if query %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <a href="{{ url_for('content.search', q=query) }}" 
+                           class="btn btn-sm btn-outline-primary {% if not content_type %}active{% endif %}">
+                            全部 ({{ results_count.total or 0 }})
+                        </a>
+                        <a href="{{ url_for('content.search', q=query, type='content') }}" 
+                           class="btn btn-sm btn-outline-primary {% if content_type == 'content' %}active{% endif %}">
+                            文章 ({{ results_count.content or 0 }})
+                        </a>
+                        <a href="{{ url_for('content.search', q=query, type='project') }}" 
+                           class="btn btn-sm btn-outline-primary {% if content_type == 'project' %}active{% endif %}">
+                            项目 ({{ results_count.project or 0 }})
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Search Results -->
+        <div class="col-lg-8">
+            {% if results %}
+            <div class="search-results">
+                {% for item in results %}
+                <div class="search-result-item card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <!-- Result Type Badge -->
+                        <div class="mb-2">
+                            {% if item.type == 'content' %}
+                            <span class="badge bg-primary">
+                                {{ get_category_emoji(item.category) }} {{ item.category }}文章
+                            </span>
+                            {% elif item.type == 'project' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-project-diagram me-1"></i>项目作品
+                            </span>
+                            {% endif %}
+                            
+                            {% if item.is_featured %}
+                            <span class="badge bg-warning text-dark ms-1">
+                                <i class="fas fa-star"></i> 精选
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Result Title -->
+                        <h5 class="card-title">
+                            <a href="{{ item.url }}" class="text-decoration-none text-dark">
+                                {% if item.highlighted_title %}
+                                {{ item.highlighted_title | safe }}
+                                {% else %}
+                                {{ item.title }}
+                                {% endif %}
+                            </a>
+                        </h5>
+                        
+                        <!-- Result Description -->
+                        <p class="card-text">
+                            {% if item.highlighted_content %}
+                            {{ item.highlighted_content | safe }}
+                            {% else %}
+                            {{ item.description | striptags | truncate(200) }}
+                            {% endif %}
+                        </p>
+                        
+                        <!-- Result Meta -->
+                        <div class="search-meta d-flex flex-wrap gap-3 align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ moment(item.created_at).format('YYYY-MM-DD') }}
+                            </small>
+                            
+                            {% if item.type == 'content' %}
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ estimate_reading_time(item.content) }}分钟阅读
+                            </small>
+                            {% endif %}
+                            
+                            {% if item.type == 'project' and item.status %}
+                            <small>
+                                <span class="badge bg-{{ 'success' if item.status == '已完成' else 'warning' if item.status == '开发中' else 'secondary' }} badge-sm">
+                                    {{ item.status }}
+                                </span>
+                            </small>
+                            {% endif %}
+                            
+                            <small class="text-muted">
+                                <i class="fas fa-eye me-1"></i>
+                                {{ item.views or 0 }} 次浏览
+                            </small>
+                        </div>
+                        
+                        <!-- Tags -->
+                        {% if item.tags %}
+                        <div class="search-tags">
+                            {% for tag in item.tags[:3] %}
+                            <a href="{{ url_for('content.search', q=tag.name) }}" 
+                               class="badge bg-light text-primary text-decoration-none me-1">
+                                #{{ tag.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Quick Actions -->
+                        <div class="mt-3">
+                            <a href="{{ item.url }}" class="btn btn-primary btn-sm">
+                                {% if item.type == 'content' %}
+                                <i class="fas fa-eye me-1"></i>阅读全文
+                                {% else %}
+                                <i class="fas fa-external-link-alt me-1"></i>查看项目
+                                {% endif %}
+                            </a>
+                            
+                            {% if item.type == 'project' and item.demo_url %}
+                            <a href="{{ item.demo_url }}" class="btn btn-outline-success btn-sm ms-2" target="_blank">
+                                <i class="fas fa-play me-1"></i>在线演示
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="搜索结果分页">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('content.search', q=query, type=content_type, page=pagination.prev_num) }}" 
+                           aria-label="上一页">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('content.search', q=query, type=content_type, page=page_num) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('content.search', q=query, type=content_type, page=pagination.next_num) }}" 
+                           aria-label="下一页">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <!-- No Results -->
+            <div class="no-results text-center py-5">
+                {% if query %}
+                <div class="mb-4">
+                    <i class="fas fa-search fa-4x text-muted"></i>
+                </div>
+                <h3 class="text-muted mb-3">未找到相关结果</h3>
+                <p class="text-muted mb-4">
+                    抱歉，没有找到与"<strong>{{ query }}</strong>"相关的内容。
+                </p>
+                
+                <!-- Search Suggestions -->
+                <div class="search-suggestions">
+                    <h6 class="mb-3">搜索建议：</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">• 检查拼写是否正确</li>
+                        <li class="mb-2">• 尝试使用不同的关键词</li>
+                        <li class="mb-2">• 使用更通用的搜索词</li>
+                        <li class="mb-2">• 尝试搜索相关技术或概念</li>
+                    </ul>
+                </div>
+                
+                <!-- Popular Searches -->
+                {% if popular_searches %}
+                <div class="popular-searches mt-4">
+                    <h6 class="mb-3">热门搜索：</h6>
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        {% for search_term in popular_searches %}
+                        <a href="{{ url_for('content.search', q=search_term) }}" 
+                           class="badge bg-light text-primary text-decoration-none">
+                            {{ search_term }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="mb-4">
+                    <i class="fas fa-search fa-4x text-muted"></i>
+                </div>
+                <h3 class="text-muted mb-3">开始搜索</h3>
+                <p class="text-muted mb-4">
+                    输入关键词搜索技术文章、项目作品和解决方案
+                </p>
+                {% endif %}
+                
+                <!-- Quick Links -->
+                <div class="quick-links mt-4">
+                    <a href="{{ url_for('content.all_content') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-list me-1"></i>浏览全部文章
+                    </a>
+                    <a href="{{ url_for('content.portfolio') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-briefcase me-1"></i>查看项目作品
+                    </a>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-1"></i>返回首页
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 100px;">
+                <!-- Search Tips -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>搜索技巧
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-quote-left text-primary me-2"></i>
+                                <strong>"精确匹配"</strong> - 使用引号搜索精确短语
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-plus text-success me-2"></i>
+                                <strong>关键词1 关键词2</strong> - 包含多个关键词
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-hashtag text-info me-2"></i>
+                                <strong>#标签</strong> - 搜索特定标签内容
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-filter text-warning me-2"></i>
+                                使用筛选器缩小搜索范围
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Popular Tags -->
+                {% if popular_tags %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tags me-2"></i>热门标签
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="tag-cloud">
+                            {% for tag, count in popular_tags %}
+                            <a href="{{ url_for('content.search', q=tag) }}" 
+                               class="badge bg-light text-primary text-decoration-none me-1 mb-2"
+                               style="font-size: {{ 0.8 + (count / 20) }}rem;">
+                                #{{ tag }} <span class="text-muted">({{ count }})</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Recent Searches -->
+                {% if recent_searches %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-history me-2"></i>最近搜索
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for search_term in recent_searches %}
+                        <a href="{{ url_for('content.search', q=search_term) }}" 
+                           class="badge bg-light text-dark text-decoration-none me-1 mb-2">
+                            {{ search_term }}
+                        </a>
+                        {% endfor %}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="clear-history">
+                                <i class="fas fa-trash me-1"></i>清空历史
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Featured Content -->
+                {% if featured_content %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-star me-2"></i>精选推荐
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for content in featured_content %}
+                        <div class="d-flex mb-3 {% if not loop.last %}pb-3 border-bottom{% endif %}">
+                            <div class="flex-shrink-0 me-3">
+                                <span class="badge bg-primary">
+                                    {{ get_category_emoji(content.category) }}
+                                </span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ content.title | truncate(40) }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    {{ moment(content.created_at).format('MM-DD') }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Contact -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">
+                            <i class="fas fa-question-circle me-2"></i>没找到答案？
+                        </h6>
+                        <p class="card-text small text-muted">
+                            直接联系我获取帮助和定制解决方案
+                        </p>
+                        <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-envelope me-1"></i>联系我
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-form .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-result-item {
+    transition: all 0.3s ease;
+}
+
+.search-result-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.search-meta {
+    font-size: 0.875rem;
+}
+
+.tag-cloud .badge {
+    transition: all 0.3s ease;
+}
+
+.tag-cloud .badge:hover {
+    transform: scale(1.05);
+    background-color: var(--bs-primary) !important;
+    color: white !important;
+}
+
+.search-result-item mark,
+.highlighted {
+    background-color: #fff3cd;
+    padding: 0.1em 0.2em;
+    border-radius: 0.25rem;
+}
+
+.no-results {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .search-meta {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search form enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    const searchForm = document.querySelector('.search-form');
+    
+    // Save search to history
+    if (searchForm) {
+        searchForm.addEventListener('submit', function() {
+            const query = searchInput.value.trim();
+            if (query) {
+                saveSearchHistory(query);
+            }
+        });
+    }
+    
+    // Clear search history
+    const clearHistoryBtn = document.getElementById('clear-history');
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', function() {
+            localStorage.removeItem('search_history');
+            this.closest('.card').style.display = 'none';
+        });
+    }
+    
+    // Auto-complete functionality (basic implementation)
+    if (searchInput) {
+        let timeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+            
+            if (query.length > 2) {
+                timeout = setTimeout(() => {
+                    // Here you could implement auto-complete
+                    // fetchSearchSuggestions(query);
+                }, 300);
+            }
+        });
+    }
+});
+
+// Save search query to localStorage
+function saveSearchHistory(query) {
+    try {
+        let history = JSON.parse(localStorage.getItem('search_history') || '[]');
+        
+        // Remove if already exists
+        history = history.filter(item => item !== query);
+        
+        // Add to beginning
+        history.unshift(query);
+        
+        // Keep only last 10 searches
+        history = history.slice(0, 10);
+        
+        localStorage.setItem('search_history', JSON.stringify(history));
+    } catch (e) {
+        console.log('Failed to save search history');
+    }
+}
+
+// Highlight search terms in results
+document.addEventListener('DOMContentLoaded', function() {
+    const query = '{{ query | escapejs }}';
+    if (query) {
+        highlightSearchTerms(query);
+    }
+});
+
+function highlightSearchTerms(query) {
+    const terms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+    const resultsContainer = document.querySelector('.search-results');
+    
+    if (!resultsContainer || terms.length === 0) return;
+    
+    terms.forEach(term => {
+        const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
+        const walker = document.createTreeWalker(
+            resultsContainer,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        const textNodes = [];
+        let node;
+        
+        while (node = walker.nextNode()) {
+            if (node.nodeValue.toLowerCase().includes(term)) {
+                textNodes.push(node);
+            }
+        }
+        
+        textNodes.forEach(textNode => {
+            const parent = textNode.parentNode;
+            if (parent.tagName !== 'MARK') {
+                const highlighted = textNode.nodeValue.replace(regex, '<mark>$1</mark>');
+                const wrapper = document.createElement('span');
+                wrapper.innerHTML = highlighted;
+                parent.insertBefore(wrapper, textNode);
+                parent.removeChild(textNode);
+            }
+        });
+    });
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Track search interactions
+function trackSearch(query, resultCount) {
+    // Here you could implement analytics tracking
+    console.log(`Search: "${query}" - ${resultCount} results`);
+}
+</script>
+{% endblock %}

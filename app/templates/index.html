@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 个人门户网站{% endblock %}
+{% block meta_description %}欢迎访问我的个人门户网站，这里分享技术文章、展示项目作品，提供专业的技术咨询服务。{% endblock %}
+{% block meta_keywords %}个人网站,技术博客,项目展示,Web开发,Python,Flask,全栈开发{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 首页特定样式 */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #1e3a8a 35%, #7c3aed 100%);
+        color: var(--text-white);
+        padding: 5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: 1;
+    }
+    
+    .hero-content {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .hero-subtitle {
+        font-size: 1.5rem;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.95);
+    }
+    
+    .hero-description {
+        font-size: 1.125rem;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .stats-section {
+        background: var(--bg-secondary);
+        padding: 60px 0;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 2rem;
+        border-radius: 1rem;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+    }
+    
+    .featured-content {
+        padding: 80px 0;
+    }
+    
+    .section-title {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .section-title h2 {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+    
+    .section-subtitle {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        opacity: 0.8;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.7;
+    }
+    
+    .content-card {
+        border: none;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .content-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+    }
+    
+    .content-card .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .category-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        z-index: 2;
+    }
+    
+    .cta-section {
+        background: var(--primary-color);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+    }
+    
+    .cta-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .cta-description {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.95);
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+    
+    .skills-section {
+        padding: 80px 0;
+        background: var(--bg-secondary);
+    }
+    
+    .skill-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        margin-bottom: 1.5rem;
+    }
+    
+    .skill-item:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        background: var(--bg-card-hover);
+    }
+    
+    .skill-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    /* 增强文字对比度 */
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+    
+    .card-text {
+        color: var(--text-secondary) !important;
+        line-height: 1.6;
+    }
+    
+    .skill-item h6 {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+    
+    .recent-projects {
+        padding: 80px 0;
+    }
+    
+    .project-card {
+        border: none;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2rem;
+        }
+        
+        .cta-title {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title fade-in">
+                你好，我是 <span class="text-warning">开发者</span>
+            </h1>
+            <p class="hero-subtitle fade-in" style="animation-delay: 0.2s;">
+                全栈开发 · 技术分享 · 开源贡献
+            </p>
+            <p class="hero-description fade-in" style="animation-delay: 0.4s;">
+                专注于现代Web技术栈，热衷于创造优雅的解决方案。在这里分享我的技术见解、项目作品，以及与代码共舞的精彩时光。
+            </p>
+            <div class="fade-in" style="animation-delay: 0.6s;">
+                <a href="#featured-content" class="btn btn-light btn-lg me-3">
+                    <i class="fas fa-arrow-down me-2"></i>探索内容
+                </a>
+                <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-envelope me-2"></i>联系我
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card fade-in">
+                    <span class="stat-number" data-count="{{ stats.total_content or 0 }}">0</span>
+                    <div class="stat-label">
+                        <i class="fas fa-blog me-2"></i>技术文章
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+                    <span class="stat-number" data-count="{{ stats.total_projects or 0 }}">0</span>
+                    <div class="stat-label">
+                        <i class="fas fa-project-diagram me-2"></i>项目作品
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+                    <span class="stat-number" data-count="{{ stats.total_code_snippets or 0 }}">0</span>
+                    <div class="stat-label">
+                        <i class="fas fa-code me-2"></i>代码片段
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card fade-in" style="animation-delay: 0.3s;">
+                    <span class="stat-number" data-count="{{ stats.total_inquiries or 0 }}">0</span>
+                    <div class="stat-label">
+                        <i class="fas fa-handshake me-2"></i>合作咨询
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Content Section -->
+<section class="featured-content" id="featured-content">
+    <div class="container">
+        <div class="section-title">
+            <h2>✨ 精选内容</h2>
+            <p class="section-subtitle">
+                从技术深度解析到项目实战经验，这里汇集了我最用心创作的内容
+            </p>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            {% for content in featured_content %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card content-card fade-in" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                    {% if content.featured_image %}
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='uploads/' + content.featured_image) }}" 
+                             class="card-img-top" alt="{{ content.title }}"
+                             loading="lazy">
+                        <span class="badge bg-primary category-badge">
+                            {{ get_category_emoji(content.category) }} {{ content.category }}
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-{{ 'laptop-code' if content.category == '技术' else 'eye' if content.category == '观察' else 'heart' if content.category == '生活' else 'palette' if content.category == '创作' else 'code' }} me-2"></i>
+                        {{ content.category }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('content.detail', id=content.id) }}" 
+                               class="text-decoration-none" style="color: var(--text-primary);">
+                                {{ content.title }}
+                            </a>
+                        </h5>
+                        <p class="card-text text-muted">
+                            {{ content.summary or (content.content | striptags | truncate(120)) }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ moment(content.created_at).format('YYYY-MM-DD') }}
+                            </small>
+                            <div>
+                                <small class="text-muted me-2">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ estimate_reading_time(content.content) }}分钟阅读
+                                </small>
+                            </div>
+                        </div>
+                        {% if content.tags %}
+                        <div class="mt-2">
+                            {% for tag in content.tags[:3] %}
+                            <span class="badge bg-light text-primary me-1">
+                                #{{ tag.name }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-edit fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">暂无精选内容</h4>
+                <p class="text-muted">内容正在创作中，敬请期待...</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if featured_content %}
+        <div class="text-center">
+            <a href="{{ url_for('content.all_content') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-arrow-right me-2"></i>查看全部内容
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Skills Section -->
+<section class="skills-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>🛠️ 技术栈</h2>
+            <p class="section-subtitle">
+                掌握现代Web开发技术，持续学习新技术，保持技术栈的先进性
+            </p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="skill-item fade-in">
+                    <div class="skill-icon">
+                        <i class="fab fa-python"></i>
+                    </div>
+                    <h6>Python</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="skill-item fade-in" style="animation-delay: 0.1s;">
+                    <div class="skill-icon">
+                        <i class="fab fa-js-square"></i>
+                    </div>
+                    <h6>JavaScript</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="skill-item fade-in" style="animation-delay: 0.2s;">
+                    <div class="skill-icon">
+                        <i class="fab fa-react"></i>
+                    </div>
+                    <h6>React</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="skill-item fade-in" style="animation-delay: 0.3s;">
+                    <div class="skill-icon">
+                        <i class="fab fa-vuejs"></i>
+                    </div>
+                    <h6>Vue.js</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="skill-item fade-in" style="animation-delay: 0.4s;">
+                    <div class="skill-icon">
+                        <i class="fab fa-node-js"></i>
+                    </div>
+                    <h6>Node.js</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="skill-item fade-in" style="animation-delay: 0.5s;">
+                    <div class="skill-icon">
+                        <i class="fab fa-docker"></i>
+                    </div>
+                    <h6>Docker</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Projects Section -->
+<section class="recent-projects">
+    <div class="container">
+        <div class="section-title">
+            <h2>🚀 最新项目</h2>
+            <p class="section-subtitle">
+                展示我的最新项目作品，每个项目都凝聚了技术创新和用户体验的思考
+            </p>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            {% for project in recent_projects %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card project-card fade-in" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                    {% if project.featured_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + project.featured_image) }}" 
+                         class="card-img-top" alt="{{ project.title }}" style="height: 200px; object-fit: cover;"
+                         loading="lazy">
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">
+                                <a href="{{ url_for('content.project_detail', id=project.id) }}" 
+                                   class="text-decoration-none" style="color: var(--text-primary);">
+                                    {{ project.title }}
+                                </a>
+                            </h5>
+                            <span class="badge bg-{{ 'success' if project.status == '已完成' else 'warning' if project.status == '开发中' else 'secondary' }}">
+                                {{ project.status }}
+                            </span>
+                        </div>
+                        
+                        {% if project.subtitle %}
+                        <p class="text-muted mb-2">{{ project.subtitle }}</p>
+                        {% endif %}
+                        
+                        <p class="card-text">
+                            {{ project.description | striptags | truncate(100) }}
+                        </p>
+                        
+                        {% if project.tech_stack %}
+                        <div class="mb-3">
+                            {% for tech in project.tech_stack[:4] %}
+                            <span class="badge bg-light text-primary me-1 mb-1">
+                                {{ tech }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                {% if project.completion_date %}
+                                {{ moment(project.completion_date).format('YYYY-MM') }}
+                                {% else %}
+                                {{ moment(project.start_date).format('YYYY-MM') }}
+                                {% endif %}
+                            </small>
+                            <div>
+                                {% if project.demo_url %}
+                                <a href="{{ project.demo_url }}" class="btn btn-sm btn-outline-primary me-1" 
+                                   target="_blank" title="查看演示">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                                {% endif %}
+                                {% if project.github_url %}
+                                <a href="{{ project.github_url }}" class="btn btn-sm btn-outline-secondary" 
+                                   target="_blank" title="查看源码">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-rocket fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">项目正在开发中</h4>
+                <p class="text-muted">精彩项目即将呈现，敬请期待...</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if recent_projects %}
+        <div class="text-center">
+            <a href="{{ url_for('content.portfolio') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-briefcase me-2"></i>查看全部项目
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2 class="cta-title">💡 有项目想法？</h2>
+        <p class="cta-description">
+            无论是Web应用开发、技术咨询，还是合作机会，我都很乐意与您交流探讨
+        </p>
+        <div>
+            <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-light btn-lg me-3">
+                <i class="fas fa-paper-plane me-2"></i>发起咨询
+            </a>
+            <a href="mailto:your@email.com" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-envelope me-2"></i>直接邮件
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 数字动画计数器
+function animateCounters() {
+    const counters = document.querySelectorAll('.stat-number');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const counter = entry.target;
+                const target = parseInt(counter.dataset.count);
+                let count = 0;
+                const increment = target / 50;
+                
+                const timer = setInterval(() => {
+                    count += increment;
+                    if (count >= target) {
+                        count = target;
+                        clearInterval(timer);
+                    }
+                    counter.textContent = Math.floor(count);
+                }, 30);
+                
+                observer.unobserve(counter);
+            }
+        });
+    });
+    
+    counters.forEach(counter => observer.observe(counter));
+}
+
+// 页面加载完成后启动动画
+document.addEventListener('DOMContentLoaded', function() {
+    animateCounters();
+});
+</script>
+{% endblock %}

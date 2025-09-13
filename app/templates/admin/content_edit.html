@@ -1,0 +1,773 @@
+{% extends "admin/content_create.html" %}
+
+{% block title %}编辑内容 - {{ content.title }} - 管理后台{% endblock %}
+{% block meta_description %}编辑文章"{{ content.title }}"，更新内容、优化SEO、调整发布设置。{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+.revision-history {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.revision-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    transition: background-color 0.2s;
+}
+
+.revision-item:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.revision-item:last-child {
+    border-bottom: none;
+}
+
+.version-badge {
+    background: linear-gradient(135deg, var(--bs-success), var(--bs-info));
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.change-summary {
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+.diff-addition {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: var(--bs-success);
+    padding: 0.1em 0.3em;
+    border-radius: 0.25rem;
+}
+
+.diff-deletion {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--bs-danger);
+    padding: 0.1em 0.3em;
+    border-radius: 0.25rem;
+    text-decoration: line-through;
+}
+
+.publish-status-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.publish-status-indicator.published {
+    background-color: var(--bs-success);
+    color: white;
+}
+
+.publish-status-indicator.draft {
+    background-color: var(--bs-warning);
+    color: var(--bs-dark);
+}
+
+.publish-status-indicator.scheduled {
+    background-color: var(--bs-info);
+    color: white;
+}
+
+.preview-link {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+    color: white;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.preview-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+    color: white;
+    text-decoration: none;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .revision-history {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .revision-item {
+    border-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .revision-item:hover {
+    background-color: rgba(79, 172, 254, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Publish Status Indicator -->
+    <div class="publish-status-indicator {{ content.status | lower }}">
+        <i class="fas fa-{{ 'check-circle' if content.status == '已发布' else 'edit' if content.status == '草稿' else 'clock' }}"></i>
+        {{ content.status }}
+        {% if content.status == '已发布' %}
+        <small class="ms-2">{{ moment(content.published_at).fromNow() if content.published_at else '刚刚发布' }}</small>
+        {% endif %}
+    </div>
+
+    <form id="contentForm" method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        
+        <div class="card">
+            <div class="content-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-2">编辑内容</h1>
+                        <p class="mb-0 opacity-90">
+                            正在编辑：{{ content.title | truncate(50) }}
+                            <small class="ms-2">
+                                创建于 {{ moment(content.created_at).format('YYYY-MM-DD HH:mm') }}
+                                {% if content.updated_at != content.created_at %}
+                                | 更新于 {{ moment(content.updated_at).format('YYYY-MM-DD HH:mm') }}
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-light" onclick="showRevisionHistory()">
+                            <i class="fas fa-history me-2"></i>版本历史
+                        </button>
+                        <button type="button" class="btn btn-outline-light" id="previewBtn">
+                            <i class="fas fa-eye me-2"></i>预览
+                        </button>
+                        <button type="submit" name="action" value="draft" class="btn btn-light">
+                            <i class="fas fa-save me-2"></i>保存
+                        </button>
+                        {% if content.status != '已发布' %}
+                        <button type="submit" name="action" value="publish" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>发布
+                        </button>
+                        {% else %}
+                        <button type="submit" name="action" value="update" class="btn btn-warning">
+                            <i class="fas fa-sync-alt me-2"></i>更新
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Auto-save indicator -->
+                <div class="auto-save-indicator" id="autoSaveIndicator">
+                    <i class="fas fa-spinner fa-spin me-2"></i>自动保存中...
+                </div>
+
+                <!-- Revision History Modal Trigger -->
+                {% if content.revision_history %}
+                <div class="revision-history" id="revisionSummary" style="display: none;">
+                    <h6><i class="fas fa-history me-2"></i>最近修改</h6>
+                    <div class="revision-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="version-badge">v{{ content.version or 1 }}</span>
+                                <span class="ms-2">{{ moment(content.updated_at).fromNow() }}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="showFullHistory()">
+                                查看完整历史
+                            </button>
+                        </div>
+                        {% if content.change_summary %}
+                        <div class="change-summary mt-2">{{ content.change_summary }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-info-circle me-2"></i>基本信息</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="title" class="form-label">
+                                <i class="fas fa-heading me-1"></i>标题 *
+                            </label>
+                            {{ form.title(class="form-control", id="title", placeholder="输入文章标题...", required=true, value=content.title) }}
+                            <div class="form-text">建议标题长度 10-60 个字符，包含主要关键词</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="category" class="form-label">
+                                <i class="fas fa-folder me-1"></i>分类 *
+                            </label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">请选择分类</option>
+                                <option value="技术" {{ 'selected' if content.category == '技术' }}>技术分享</option>
+                                <option value="观察" {{ 'selected' if content.category == '观察' }}>观察思考</option>
+                                <option value="生活" {{ 'selected' if content.category == '生活' }}>生活随笔</option>
+                                <option value="创作" {{ 'selected' if content.category == '创作' }}>创意作品</option>
+                                <option value="代码" {{ 'selected' if content.category == '代码' }}>代码片段</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="summary" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>摘要
+                        </label>
+                        <textarea class="form-control" id="summary" name="summary" rows="3" placeholder="文章摘要，用于搜索结果和社交分享...">{{ content.summary or '' }}</textarea>
+                        <div class="form-text">建议摘要长度 50-160 个字符，简明扼要地描述文章内容</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">
+                                <i class="fas fa-flag me-1"></i>状态
+                            </label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="草稿" {{ 'selected' if content.status == '草稿' }}>草稿</option>
+                                <option value="已发布" {{ 'selected' if content.status == '已发布' }}>已发布</option>
+                                <option value="计划" {{ 'selected' if content.status == '计划' }}>计划中</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" {{ 'checked' if content.is_featured }}>
+                                <label class="form-check-label" for="is_featured">
+                                    <i class="fas fa-star text-warning me-1"></i>设为精选内容
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Editor Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-edit me-2"></i>内容编辑</h6>
+                    
+                    <!-- Editor Toolbar -->
+                    <div class="editor-toolbar">
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('**', '**', '粗体文本')" title="粗体">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('*', '*', '斜体文本')" title="斜体">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('`', '`', '代码')" title="行内代码">
+                            <i class="fas fa-code"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('```\n', '\n```', 'javascript\n// 代码块')" title="代码块">
+                            <i class="fas fa-terminal"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('[', '](url)', '链接文本')" title="链接">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('![', '](image-url)', 'alt文本')" title="图片">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('\n## ', '', '标题')" title="标题">
+                            <i class="fas fa-heading"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('\n- ', '', '列表项')" title="列表">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('\n> ', '', '引用文本')" title="引用">
+                            <i class="fas fa-quote-right"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertTable()" title="表格">
+                            <i class="fas fa-table"></i>
+                        </button>
+                        <button type="button" class="editor-btn" id="togglePreview" title="切换预览">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="toggleFullscreen()" title="全屏">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+
+                    <div class="editor-container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <textarea class="form-control" id="contentEditor" name="content" rows="20" placeholder="在此处编写您的文章内容...">{{ content.content or '' }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="preview-container" id="previewContainer">
+                                    <div class="text-muted text-center py-5">
+                                        <i class="fas fa-eye fa-2x mb-3"></i>
+                                        <p>实时预览将在这里显示</p>
+                                        <small>开始输入内容以查看预览效果</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Upload Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-image me-2"></i>特色图片</h6>
+                    
+                    {% if content.featured_image %}
+                    <div class="current-image mb-3">
+                        <label class="form-label">当前图片</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <img src="{{ content.featured_image }}" alt="当前特色图片" style="width: 120px; height: 80px; object-fit: cover; border-radius: 0.5rem;">
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFeaturedImage()">
+                                    <i class="fas fa-trash me-1"></i>删除图片
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <input type="file" id="featuredImage" name="featured_image" accept="image/*" style="display: none;">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">{{ '点击更换特色图片' if content.featured_image else '点击或拖拽上传特色图片' }}</h6>
+                        <p class="text-muted mb-0">支持 JPG, PNG, WebP 格式，最大 5MB</p>
+                        <div id="imagePreview"></div>
+                    </div>
+                </div>
+
+                <!-- Tags Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-tags me-2"></i>标签和分类</h6>
+                    
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">标签</label>
+                        <div class="tag-input-container">
+                            <input type="text" class="form-control" id="tagInput" placeholder="输入标签，按回车添加...">
+                            <div class="tag-suggestions" id="tagSuggestions"></div>
+                        </div>
+                        <input type="hidden" name="tags" id="tagsHidden" value="{{ content.tags or '' }}">
+                        <div class="form-text">输入相关标签，有助于读者发现您的内容</div>
+                        <div class="selected-tags mt-2" id="selectedTags"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="reading_time" class="form-label">预计阅读时间</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="reading_time" name="reading_time" min="1" max="60" value="{{ content.reading_time or '' }}">
+                                <span class="input-group-text">分钟</span>
+                            </div>
+                            <div class="form-text">系统将自动计算，也可手动调整</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="difficulty" class="form-label">难度等级</label>
+                            <select class="form-select" id="difficulty" name="difficulty">
+                                <option value="">选择难度等级</option>
+                                <option value="入门" {{ 'selected' if content.difficulty == '入门' }}>入门</option>
+                                <option value="初级" {{ 'selected' if content.difficulty == '初级' }}>初级</option>
+                                <option value="中级" {{ 'selected' if content.difficulty == '中级' }}>中级</option>
+                                <option value="高级" {{ 'selected' if content.difficulty == '高级' }}>高级</option>
+                                <option value="专家" {{ 'selected' if content.difficulty == '专家' }}>专家</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO Optimization Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-search me-2"></i>SEO 优化</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="meta_title" class="form-label">SEO 标题</label>
+                            <input type="text" class="form-control" id="meta_title" name="meta_title" placeholder="SEO 标题（留空将使用文章标题）" value="{{ content.meta_title or '' }}">
+                            <div class="form-text">建议长度 50-60 个字符 <span id="titleLength">{{ (content.meta_title or content.title or '') | length }}</span>/60</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">SEO 评分</label>
+                            <div class="seo-score needs-improvement" id="seoScore">
+                                <i class="fas fa-exclamation-triangle me-1"></i>需要优化
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meta_description" class="form-label">SEO 描述</label>
+                        <textarea class="form-control" id="meta_description" name="meta_description" rows="3" placeholder="SEO 描述（留空将使用文章摘要）">{{ content.meta_description or '' }}</textarea>
+                        <div class="form-text">建议长度 120-160 个字符 <span id="descLength">{{ (content.meta_description or content.summary or '') | length }}</span>/160</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">URL 别名</label>
+                        <div class="input-group">
+                            <span class="input-group-text">/content/</span>
+                            <input type="text" class="form-control" id="slug" name="slug" placeholder="url-friendly-name" value="{{ content.slug or '' }}">
+                        </div>
+                        <div class="form-text">URL 友好的别名，留空将自动生成</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="indexable" name="indexable" {{ 'checked' if content.indexable != False }}>
+                                <label class="form-check-label" for="indexable">
+                                    允许搜索引擎索引
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sitemap" name="sitemap" {{ 'checked' if content.sitemap != False }}>
+                                <label class="form-check-label" for="sitemap">
+                                    包含在站点地图中
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publishing Options -->
+                <div class="form-section">
+                    <h6><i class="fas fa-calendar me-2"></i>发布选项</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="publish_date" class="form-label">发布时间</label>
+                            <input type="datetime-local" class="form-control" id="publish_date" name="publish_date" value="{{ content.published_at.strftime('%Y-%m-%dT%H:%M') if content.published_at else '' }}">
+                            <div class="form-text">留空表示立即发布</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="author" class="form-label">作者</label>
+                            <input type="text" class="form-control" id="author" name="author" value="{{ content.author or (current_user.name if current_user else '管理员') }}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Statistics -->
+                {% if content.views or content.likes or content.comments %}
+                <div class="form-section">
+                    <h6><i class="fas fa-chart-bar me-2"></i>内容统计</h6>
+                    
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h4 text-primary mb-1">{{ content.views or 0 }}</div>
+                                <small class="text-muted">浏览次数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h4 text-success mb-1">{{ content.likes or 0 }}</div>
+                                <small class="text-muted">点赞数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h4 text-info mb-1">{{ content.comments or 0 }}</div>
+                                <small class="text-muted">评论数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h4 text-warning mb-1">{{ content.shares or 0 }}</div>
+                                <small class="text-muted">分享次数</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{{ url_for('admin.content_manage') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回列表
+                        </a>
+                        <button type="button" class="btn btn-outline-info" onclick="duplicateContent()">
+                            <i class="fas fa-copy me-2"></i>复制文章
+                        </button>
+                        {% if content.status == '已发布' %}
+                        <button type="button" class="btn btn-outline-warning" onclick="unpublishContent()">
+                            <i class="fas fa-eye-slash me-2"></i>取消发布
+                        </button>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <button type="submit" name="action" value="draft" class="btn btn-outline-primary">
+                            <i class="fas fa-save me-2"></i>保存更改
+                        </button>
+                        <button type="submit" name="action" value="preview" class="btn btn-info">
+                            <i class="fas fa-eye me-2"></i>预览文章
+                        </button>
+                        {% if content.status != '已发布' %}
+                        <button type="submit" name="action" value="publish" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>发布文章
+                        </button>
+                        {% else %}
+                        <button type="submit" name="action" value="update" class="btn btn-warning">
+                            <i class="fas fa-sync-alt me-2"></i>更新文章
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Link for Published Content -->
+        {% if content.status == '已发布' %}
+        <a href="{{ url_for('content.detail', id=content.id) }}" target="_blank" class="preview-link">
+            <i class="fas fa-external-link-alt me-2"></i>查看已发布文章
+        </a>
+        {% endif %}
+
+        <!-- Word Count Display -->
+        <div class="word-count" id="wordCount">
+            字数: 0 | 字符: 0
+        </div>
+    </form>
+</div>
+
+<!-- Revision History Modal -->
+<div class="modal fade" id="revisionHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history me-2"></i>版本历史
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="revisionHistoryContent">
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                        <p class="mt-3 text-muted">加载版本历史...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+// Initialize existing tags
+document.addEventListener('DOMContentLoaded', function() {
+    // Load existing tags
+    const existingTags = '{{ content.tags or "" }}';
+    if (existingTags) {
+        tags = existingTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        updateTagsDisplay();
+        updateTagsHidden();
+    }
+    
+    // Initialize with existing content
+    updatePreview();
+    updateWordCount();
+    updateSEOScore();
+});
+
+// Show revision history
+function showRevisionHistory() {
+    const modal = new bootstrap.Modal(document.getElementById('revisionHistoryModal'));
+    modal.show();
+    
+    // Load revision history
+    fetch(`/admin/content/{{ content.id }}/revisions`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('revisionHistoryContent');
+            if (data.revisions && data.revisions.length > 0) {
+                container.innerHTML = data.revisions.map(revision => `
+                    <div class="revision-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="version-badge">v${revision.version}</span>
+                                <span class="ms-2">${revision.created_at}</span>
+                                <small class="ms-2 text-muted">by ${revision.author}</small>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="compareVersion(${revision.version})">
+                                    对比
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="restoreVersion(${revision.version})">
+                                    恢复
+                                </button>
+                            </div>
+                        </div>
+                        ${revision.summary ? `<div class="change-summary mt-2">${revision.summary}</div>` : ''}
+                        ${revision.changes ? `<div class="mt-2">${revision.changes}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-history fa-2x text-muted"></i>
+                        <p class="mt-3 text-muted">暂无版本历史</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('revisionHistoryContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    加载版本历史失败：${error.message}
+                </div>
+            `;
+        });
+}
+
+// Compare version
+function compareVersion(version) {
+    window.open(`/admin/content/{{ content.id }}/compare/${version}`, '_blank');
+}
+
+// Restore version
+function restoreVersion(version) {
+    if (confirm(`确定要恢复到版本 v${version} 吗？当前的更改将会丢失。`)) {
+        fetch(`/admin/content/{{ content.id }}/restore/${version}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('版本恢复成功！页面将自动刷新。');
+                location.reload();
+            } else {
+                alert('版本恢复失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('版本恢复失败：' + error.message);
+        });
+    }
+}
+
+// Remove featured image
+function removeFeaturedImage() {
+    if (confirm('确定要删除特色图片吗？')) {
+        fetch(`/admin/content/{{ content.id }}/remove-image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector('.current-image').remove();
+                document.querySelector('.image-upload-area h6').textContent = '点击或拖拽上传特色图片';
+            } else {
+                alert('删除失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('删除失败：' + error.message);
+        });
+    }
+}
+
+// Duplicate content
+function duplicateContent() {
+    if (confirm('确定要复制这篇文章吗？将创建一个副本。')) {
+        window.location.href = `/admin/content/{{ content.id }}/duplicate`;
+    }
+}
+
+// Unpublish content
+function unpublishContent() {
+    if (confirm('确定要取消发布这篇文章吗？文章将变为草稿状态。')) {
+        fetch(`/admin/content/{{ content.id }}/unpublish`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('文章已取消发布');
+                location.reload();
+            } else {
+                alert('取消发布失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('取消发布失败：' + error.message);
+        });
+    }
+}
+
+// Override form validation for editing
+document.getElementById('contentForm').addEventListener('submit', function(e) {
+    const action = e.submitter.value;
+    
+    if (action === 'publish' || action === 'update') {
+        // Validate required fields for publishing
+        const title = document.getElementById('title').value.trim();
+        const content = document.getElementById('contentEditor').value.trim();
+        const category = document.getElementById('category').value;
+        
+        if (!title) {
+            alert('发布文章需要填写标题');
+            e.preventDefault();
+            document.getElementById('title').focus();
+            return;
+        }
+        
+        if (!content) {
+            alert('发布文章需要填写内容');
+            e.preventDefault();
+            document.getElementById('contentEditor').focus();
+            return;
+        }
+        
+        if (!category) {
+            alert('发布文章需要选择分类');
+            e.preventDefault();
+            document.getElementById('category').focus();
+            return;
+        }
+        
+        // Confirm publication/update
+        const confirmMessage = action === 'publish' ? 
+            '确定要发布这篇文章吗？发布后将对所有用户可见。' : 
+            '确定要更新这篇已发布的文章吗？更新后立即生效。';
+            
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+            return;
+        }
+    }
+    
+    // Show loading state
+    const submitBtn = e.submitter;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>处理中...';
+    submitBtn.disabled = true;
+    
+    // Re-enable button if form submission fails
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 10000);
+});
+</script>
+{% endblock %}

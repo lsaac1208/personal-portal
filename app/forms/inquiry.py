@@ -131,13 +131,11 @@ class ProjectInquiryForm(FlaskForm):
                               default='任何时间')
     
     # 数据保护和同意
-    privacy_agreement = BooleanField('隐私协议',
-                                    validators=[DataRequired(message='请同意隐私协议')],
-                                    label='我同意个人信息处理和使用条款')
+    privacy_agreement = BooleanField('我同意个人信息处理和使用条款',
+                                    validators=[DataRequired(message='请同意隐私协议')])
     
-    marketing_emails = BooleanField('营销邮件',
-                                   default=False,
-                                   label='我愿意接收技术分享和项目案例邮件（可选）')
+    marketing_emails = BooleanField('我愿意接收技术分享和项目案例邮件（可选）',
+                                   default=False)
 
     def validate_phone(self, field):
         """验证电话号码格式"""
@@ -206,9 +204,8 @@ class InquiryResponseForm(FlaskForm):
                                   })
     
     # 发送邮件通知
-    send_email = BooleanField('发送邮件通知', 
-                             default=True,
-                             label='向客户发送邮件通知')
+    send_email = BooleanField('向客户发送邮件通知', 
+                             default=True)
 
 
 class ContactForm(FlaskForm):

@@ -68,7 +68,7 @@
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/yourusername/personal-portal.git
+git clone https://github.com/lsaac1208/personal-portal.git
 cd personal-portal
 ```
 
@@ -247,7 +247,7 @@ personal-portal/
 
 - **作者**: [您的姓名]
 - **邮箱**: [your-email@example.com]
-- **GitHub**: [https://github.com/yourusername](https://github.com/yourusername)
+- **GitHub**: [https://github.com/lsaac1208](https://github.com/lsaac1208)
 - **网站**: [https://your-website.com](https://your-website.com)
 
 ## 📄 许可证

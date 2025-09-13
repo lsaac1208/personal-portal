@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}页面未找到 - 个人门户网站{% endblock %}
+{% block meta_description %}抱歉，您访问的页面不存在。请检查网址是否正确或返回首页浏览其他内容。{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <!-- Error Illustration -->
+            <div class="error-illustration mb-5">
+                <div class="error-code display-1 fw-bold text-primary mb-3" style="font-size: 8rem;">
+                    404
+                </div>
+                <div class="error-icon mb-4">
+                    <i class="fas fa-search fa-4x text-muted"></i>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message mb-5">
+                <h1 class="h2 mb-3">页面未找到</h1>
+                <p class="lead text-muted mb-4">
+                    抱歉，您访问的页面不存在或已被移动到其他位置。
+                </p>
+                <p class="text-muted">
+                    可能的原因：页面已被删除、链接输入错误或内容已迁移
+                </p>
+            </div>
+            
+            <!-- Search Section -->
+            <div class="search-section mb-5">
+                <h5 class="mb-3">尝试搜索您需要的内容</h5>
+                <form method="GET" action="{{ url_for('content.search') }}" class="search-form">
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control" name="q" 
+                               placeholder="输入关键词搜索..." autofocus>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i> 搜索
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Quick Navigation -->
+            <div class="quick-nav mb-5">
+                <h5 class="mb-3">或者访问以下页面</h5>
+                <div class="row g-3">
+                    <div class="col-md-3 col-6">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-home d-block mb-2 fa-2x"></i>
+                            首页
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="{{ url_for('content.all_content') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-blog d-block mb-2 fa-2x"></i>
+                            技术文章
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="{{ url_for('content.portfolio') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-briefcase d-block mb-2 fa-2x"></i>
+                            项目作品
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-envelope d-block mb-2 fa-2x"></i>
+                            联系我
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Popular Content -->
+            <div class="popular-content">
+                <h5 class="mb-3">热门内容推荐</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body text-start">
+                                <h6 class="card-title">
+                                    <i class="fas fa-star text-warning me-2"></i>精选技术文章
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    浏览最受欢迎的技术分享和开发经验
+                                </p>
+                                <a href="{{ url_for('content.all_content') }}" class="btn btn-sm btn-primary">
+                                    查看文章
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body text-start">
+                                <h6 class="card-title">
+                                    <i class="fas fa-rocket text-success me-2"></i>最新项目
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    查看最新完成的项目和技术方案
+                                </p>
+                                <a href="{{ url_for('content.portfolio') }}" class="btn btn-sm btn-success">
+                                    查看项目
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="help-section mt-5 pt-5 border-top">
+                <h6 class="mb-3">需要帮助？</h6>
+                <p class="text-muted mb-3">
+                    如果您认为这是一个错误，或者需要特定内容的帮助，请联系我。
+                </p>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <a href="mailto:your@email.com" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-envelope me-1"></i>发送邮件
+                    </a>
+                    <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-question-circle me-1"></i>提交问题
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="history.back()">
+                        <i class="fas fa-arrow-left me-1"></i>返回上页
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.error-illustration {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.error-code {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+}
+
+.quick-nav .btn {
+    padding: 1.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.quick-nav .btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.search-form .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .error-code {
+    background: linear-gradient(135deg, #6ea8fe, #9ec5fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 4rem !important;
+    }
+    
+    .quick-nav .btn {
+        padding: 1rem 0.5rem;
+    }
+    
+    .quick-nav .btn i {
+        font-size: 1.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-focus search input after page load
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput) {
+        setTimeout(() => {
+            searchInput.focus();
+        }, 500);
+    }
+    
+    // Track 404 error for analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'page_not_found', {
+            'page_location': window.location.href,
+            'page_referrer': document.referrer
+        });
+    }
+    
+    // Log error details for debugging
+    console.warn('404 Error - Page not found:', {
+        url: window.location.href,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Enhanced search with suggestions
+document.querySelector('.search-form').addEventListener('submit', function(e) {
+    const query = document.querySelector('input[name="q"]').value.trim();
+    if (!query) {
+        e.preventDefault();
+        document.querySelector('input[name="q"]').focus();
+        return false;
+    }
+    
+    // Track search from 404 page
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'search_from_404', {
+            'search_term': query
+        });
+    }
+});
+
+// Add helpful keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Press 'H' to go home
+    if (e.key === 'h' || e.key === 'H') {
+        if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            const activeElement = document.activeElement;
+            if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                window.location.href = "{{ url_for('main.index') }}";
+            }
+        }
+    }
+    
+    // Press 'B' to go back
+    if (e.key === 'b' || e.key === 'B') {
+        if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            const activeElement = document.activeElement;
+            if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                history.back();
+            }
+        }
+    }
+    
+    // Press '/' to focus search
+    if (e.key === '/') {
+        const activeElement = document.activeElement;
+        if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            document.querySelector('input[name="q"]').focus();
+        }
+    }
+});
+
+// Add keyboard shortcut hints
+document.addEventListener('DOMContentLoaded', function() {
+    const helpSection = document.querySelector('.help-section');
+    const keyboardHints = document.createElement('div');
+    keyboardHints.className = 'mt-3';
+    keyboardHints.innerHTML = `
+        <small class="text-muted">
+            <i class="fas fa-keyboard me-1"></i>快捷键：
+            <kbd>H</kbd> 首页 |
+            <kbd>B</kbd> 返回 |
+            <kbd>/</kbd> 搜索
+        </small>
+    `;
+    helpSection.appendChild(keyboardHints);
+});
+</script>
+{% endblock %}

@@ -12,6 +12,8 @@ WTForms==3.0.1
 Markdown==3.5.1
 Pygments==2.16.1
 Pillow==10.0.1
+jieba==0.42.1        # 中文分词
+pypinyin==0.49.0     # 中文转拼音
 
 # 数据库
 sqlite3  # 内置，SQLite支持

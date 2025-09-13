@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} - 内容分类{% endblock %}
+{% block meta_description %}浏览{{ category }}分类下的所有内容，包括技术文章、观察思考、生活感悟、创意作品等。{% endblock %}
+
+{% block extra_css %}
+<style>
+.category-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4rem 0;
+    margin-top: -76px;
+    padding-top: 5rem;
+}
+
+.category-filter {
+    background: #f8f9fa;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.content-grid .card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.content-grid .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+.category-stats {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    color: white;
+    text-align: center;
+}
+
+.tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.tag-filter .badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tag-filter .badge:hover,
+.tag-filter .badge.active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Category Header -->
+<section class="category-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="fade-in">
+                    <h1 class="display-4 mb-3">
+                        <i class="fas fa-{{ 'laptop-code' if category == '技术' else 'eye' if category == '观察' else 'heart' if category == '生活' else 'palette' if category == '创作' else 'code' }} me-3"></i>
+                        {{ category }}
+                    </h1>
+                    <p class="lead mb-4">
+                        {% if category == '技术' %}
+                        深入技术世界，分享开发经验、架构思考和前沿技术探索
+                        {% elif category == '观察' %}
+                        观察行业动态，思考技术趋势和产品发展方向
+                        {% elif category == '生活' %}
+                        记录生活点滴，分享个人感悟和成长历程
+                        {% elif category == '创作' %}
+                        创意作品展示，设计思路和艺术表达
+                        {% elif category == '代码' %}
+                        实用代码片段、开发技巧和编程实践
+                        {% else %}
+                        精选{{ category }}内容，为您呈现优质文章
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="category-stats fade-in" style="animation-delay: 0.2s;">
+                    <h3 class="mb-2">{{ content_items|length }}</h3>
+                    <p class="mb-0">篇{{ category }}内容</p>
+                    {% if pagination.total > content_items|length %}
+                    <small class="opacity-75">共{{ pagination.total }}篇内容</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filter Section -->
+{% if category_tags %}
+<section class="py-4">
+    <div class="container">
+        <div class="category-filter">
+            <div class="d-flex align-items-center justify-content-between flex-wrap">
+                <h6 class="mb-0 me-3">
+                    <i class="fas fa-filter me-2"></i>按标签筛选
+                </h6>
+                <div class="tag-filter">
+                    <a href="{{ url_for('main.category', category=category) }}" 
+                       class="badge bg-light text-dark text-decoration-none {{ 'active' if not current_tag }}">
+                        全部
+                    </a>
+                    {% for tag in category_tags %}
+                    <a href="{{ url_for('main.category', category=category, tag=tag.name) }}" 
+                       class="badge bg-light text-dark text-decoration-none {{ 'active' if current_tag == tag.name }}">
+                        {{ tag.name }} ({{ tag.usage_count }})
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Content Grid -->
+<section class="py-5">
+    <div class="container">
+        {% if current_tag %}
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('main.index') }}">首页</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('main.category', category=category) }}">{{ category }}</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ current_tag }}</li>
+                </ol>
+            </nav>
+        </div>
+        {% endif %}
+
+        <div class="content-grid">
+            <div class="row g-4">
+                {% for content in content_items %}
+                <div class="col-lg-4 col-md-6">
+                    <article class="card h-100 fade-in" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                        {% if content.featured_image %}
+                        <img src="{{ url_for('static', filename='uploads/' + content.featured_image) }}" 
+                             class="card-img-top" alt="{{ content.title }}" 
+                             style="height: 200px; object-fit: cover;" loading="lazy">
+                        {% endif %}
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a href="{{ url_for('content.detail', id=content.id) }}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ content.title }}
+                                </a>
+                            </h5>
+                            
+                            <p class="card-text text-muted flex-grow-1">
+                                {{ content.summary or (content.content | striptags | truncate(120)) }}
+                            </p>
+                            
+                            <div class="mt-auto">
+                                {% if content.tags %}
+                                <div class="mb-3">
+                                    {% for tag in content.tags[:3] %}
+                                    <a href="{{ url_for('main.tag_view', tag_name=tag.name) }}" 
+                                       class="badge bg-light text-primary text-decoration-none me-1">
+                                        #{{ tag.name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ moment(content.created_at).format('MM-DD') }}
+                                    </small>
+                                    <div class="d-flex align-items-center text-muted">
+                                        <small class="me-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ estimate_reading_time(content.content) }}分钟
+                                        </small>
+                                        {% if content.view_count %}
+                                        <small>
+                                            <i class="fas fa-eye me-1"></i>
+                                            {{ content.view_count }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if content.is_featured %}
+                                <div class="mt-2">
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-star me-1"></i>精选
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">暂无{{ category }}内容</h4>
+                        <p class="text-muted">
+                            {% if current_tag %}
+                            没有找到标签为"{{ current_tag }}"的{{ category }}内容
+                            {% else %}
+                            该分类下暂无内容，请关注后续更新
+                            {% endif %}
+                        </p>
+                        {% if current_tag %}
+                        <a href="{{ url_for('main.category', category=category) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>查看全部{{ category }}内容
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>返回首页
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="内容分页" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.category', category=category, page=pagination.prev_num, tag=current_tag) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.category', category=category, page=page_num, tag=current_tag) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.category', category=category, page=pagination.next_num, tag=current_tag) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Related Categories -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h4 class="text-center mb-4">探索其他分类</h4>
+        <div class="row g-3">
+            {% set categories = ['技术', '观察', '生活', '创作', '代码'] %}
+            {% for cat in categories %}
+                {% if cat != category %}
+                <div class="col-lg-2 col-md-4 col-6">
+                    <a href="{{ url_for('main.category', category=cat) }}" 
+                       class="card text-center text-decoration-none h-100 border-0 category-link">
+                        <div class="card-body">
+                            <i class="fas fa-{{ 'laptop-code' if cat == '技术' else 'eye' if cat == '观察' else 'heart' if cat == '生活' else 'palette' if cat == '创作' else 'code' }} fa-2x text-primary mb-2"></i>
+                            <h6 class="card-title mb-0">{{ cat }}</h6>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 平滑滚动到锚点
+    const links = document.querySelectorAll('a[href^="#"]');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // 标签过滤动画效果
+    const tagLinks = document.querySelectorAll('.tag-filter .badge');
+    tagLinks.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('active')) {
+                this.style.transform = 'scale(1.05)';
+            }
+        });
+        badge.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('active')) {
+                this.style.transform = 'scale(1)';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

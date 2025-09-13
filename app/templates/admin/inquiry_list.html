@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}咨询列表 - 管理后台{% endblock %}
+{% block meta_description %}项目咨询列表管理界面，查看和管理客户咨询记录。{% endblock %}
+
+{% block extra_css %}
+<style>
+.status-badge {
+    font-size: 0.75em;
+    padding: 0.35em 0.8em;
+    border-radius: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-新咨询 { background: #ffc107; color: #000; }
+.status-处理中 { background: #17a2b8; color: #fff; }
+.status-等待客户 { background: #6f42c1; color: #fff; }
+.status-已报价 { background: #28a745; color: #fff; }
+.status-已成交 { background: #28a745; color: #fff; }
+.status-已拒绝 { background: #dc3545; color: #fff; }
+.status-已关闭 { background: #6c757d; color: #fff; }
+
+.inquiry-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.inquiry-card:hover {
+    border-left-color: #007bff;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+    transform: translateY(-2px);
+}
+
+.inquiry-meta {
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+.priority-高 { border-left-color: #dc3545 !important; }
+.priority-中 { border-left-color: #ffc107 !important; }
+.priority-低 { border-left-color: #28a745 !important; }
+
+.filter-tabs .nav-link {
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-inbox me-2 text-primary"></i>咨询管理
+            </h2>
+            <p class="text-muted mb-0">项目咨询和客户询问管理</p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>返回后台
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-envelope fa-2x mb-2"></i>
+                    <h4>{{ inquiries|length }}</h4>
+                    <small>总咨询数</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4>{{ inquiries|selectattr('status', 'equalto', '新咨询')|list|length }}</h4>
+                    <small>待处理</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-cogs fa-2x mb-2"></i>
+                    <h4>{{ inquiries|selectattr('status', 'equalto', '处理中')|list|length }}</h4>
+                    <small>处理中</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4>{{ inquiries|selectattr('status', 'equalto', '已成交')|list|length }}</h4>
+                    <small>已成交</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="filter-tabs">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link {% if not current_status %}active{% endif %}" 
+                           href="{{ url_for('admin.inquiry_list') }}">
+                            全部咨询
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_status == '新咨询' %}active{% endif %}" 
+                           href="{{ url_for('admin.inquiry_list', status='新咨询') }}">
+                            新咨询
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_status == '处理中' %}active{% endif %}" 
+                           href="{{ url_for('admin.inquiry_list', status='处理中') }}">
+                            处理中
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_status == '已成交' %}active{% endif %}" 
+                           href="{{ url_for('admin.inquiry_list', status='已成交') }}">
+                            已成交
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_status == '已关闭' %}active{% endif %}" 
+                           href="{{ url_for('admin.inquiry_list', status='已关闭') }}">
+                            已关闭
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inquiry List -->
+    <div class="row">
+        {% for inquiry in inquiries %}
+        <div class="col-12">
+            <div class="card inquiry-card priority-{{ inquiry.priority or '中' }}">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-2">
+                                        <a href="{{ url_for('admin.inquiry_detail', id=inquiry.id) }}" 
+                                           class="text-decoration-none">
+                                            {{ inquiry.subject }}
+                                        </a>
+                                        <span class="status-badge status-{{ inquiry.status }}">
+                                            {{ inquiry.status }}
+                                        </span>
+                                    </h6>
+                                    
+                                    <div class="inquiry-meta mb-2">
+                                        <i class="fas fa-user me-1"></i>{{ inquiry.client_name }}
+                                        <i class="fas fa-envelope me-1 ms-3"></i>{{ inquiry.client_email }}
+                                        {% if inquiry.client_company %}
+                                        <i class="fas fa-building me-1 ms-3"></i>{{ inquiry.client_company }}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <p class="card-text text-muted">
+                                        {{ inquiry.description[:200] }}
+                                        {% if inquiry.description|length > 200 %}...{% endif %}
+                                    </p>
+                                    
+                                    <div class="inquiry-meta">
+                                        <i class="fas fa-tag me-1"></i>{{ inquiry.inquiry_type }}
+                                        {% if inquiry.budget_range %}
+                                        <i class="fas fa-dollar-sign me-1 ms-3"></i>{{ inquiry.budget_range }}
+                                        {% endif %}
+                                        {% if inquiry.timeline %}
+                                        <i class="fas fa-calendar me-1 ms-3"></i>{{ inquiry.timeline }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 text-end">
+                            <div class="inquiry-meta mb-2">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ inquiry.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </div>
+                            
+                            {% if inquiry.priority %}
+                            <div class="mb-2">
+                                <span class="badge bg-secondary">{{ inquiry.priority }}优先级</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="btn-group-sm">
+                                <a href="{{ url_for('admin.inquiry_detail', id=inquiry.id) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye me-1"></i>查看
+                                </a>
+                                
+                                {% if inquiry.status == '新咨询' %}
+                                <a href="{{ url_for('admin.inquiry_detail', id=inquiry.id) }}" 
+                                   class="btn btn-sm btn-success">
+                                    <i class="fas fa-reply me-1"></i>回复
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">暂无咨询记录</h5>
+                <p class="text-muted">还没有客户咨询，请等待新的询问。</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="咨询分页">
+            <ul class="pagination">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.inquiry_list', page=pagination.prev_num, status=current_status) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.inquiry_list', page=page_num, status=current_status) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.inquiry_list', page=pagination.next_num, status=current_status) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh every 30 seconds for new inquiries
+setInterval(function() {
+    if (window.location.search.includes('status=新咨询') || window.location.pathname.includes('inquiry_list')) {
+        // Only refresh if on new inquiries or main list
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

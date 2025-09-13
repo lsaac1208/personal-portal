@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chrome Test Page</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Chrome Test Page</h1>
+    <p>This is a simple test page to verify Chrome can load basic HTML.</p>
+    <p>Current time: <span id="time"></span></p>
+    
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        console.log('Chrome test page loaded successfully');
+    </script>
+</body>
+</html>

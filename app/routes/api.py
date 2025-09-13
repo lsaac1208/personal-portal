@@ -2,10 +2,10 @@
 🔌 API路由蓝图
 RESTful API接口和AJAX端点
 """
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, flash, redirect, url_for
 from app.models import Content, Project, ProjectInquiry, Tag
-from app.forms import ProjectInquiryForm
-from app.utils.email_utils import send_inquiry_notification
+from app.forms import ProjectInquiryForm, NewsletterForm
+from app.utils.email_utils import send_inquiry_notification, send_newsletter
 
 bp = Blueprint('api', __name__)
 
@@ -22,14 +22,24 @@ def submit_inquiry():
     if form.validate_on_submit():
         # 创建咨询记录
         inquiry = ProjectInquiry(
-            client_name=form.client_name.data,
-            client_email=form.client_email.data,
-            client_phone=form.client_phone.data,
-            project_type=form.project_type.data,
+            client_name=form.name.data,
+            client_email=form.email.data,
+            client_phone=form.phone.data,
+            client_company=form.company.data,
+            client_position=form.position.data,
+            project_id=form.project_id.data if form.project_id.data else None,
+            inquiry_type=form.inquiry_type.data,
+            subject=form.subject.data,
             description=form.description.data,
             budget_range=form.budget_range.data,
             timeline=form.timeline.data,
-            status='待处理'
+            tech_requirements=form.preferred_tech.data,
+            additional_info=form.additional_info.data,
+            contact_preference=form.contact_preference.data,
+            contact_time=form.contact_time.data,
+            privacy_agreed=form.privacy_agreement.data,
+            receive_updates=form.marketing_emails.data,
+            status='新咨询'
         )
         
         try:
@@ -39,7 +49,11 @@ def submit_inquiry():
             
             # 发送邮件通知 (异步)
             try:
+                from app.utils.email_utils import send_inquiry_notification, send_inquiry_confirmation
+                # 发送管理员通知邮件
                 send_inquiry_notification(inquiry)
+                # 发送客户确认邮件
+                send_inquiry_confirmation(inquiry)
             except Exception as e:
                 current_app.logger.error(f'邮件发送失败: {str(e)}')
             
@@ -296,3 +310,69 @@ def feedback_api():
             'success': False,
             'message': '反馈提交失败'
         }), 500
+
+
+# 📧 邮件订阅API
+@bp.route('/newsletter-subscribe', methods=['POST'])
+def newsletter_subscribe():
+    """
+    📧 邮件订阅
+    用户订阅技术分享和项目更新
+    """
+    try:
+        email = request.form.get('email')
+        if not email:
+            flash('请输入邮箱地址', 'error')
+            return redirect(request.referrer or url_for('main.index'))
+        
+        # 简单邮箱格式验证
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            flash('请输入有效的邮箱地址', 'error')
+            return redirect(request.referrer or url_for('main.index'))
+        
+        # 这里应该存储到数据库，暂时只记录日志
+        current_app.logger.info(f'新的邮件订阅: {email}')
+        
+        # 发送欢迎邮件
+        try:
+            newsletter_data = {
+                'title': '欢迎订阅！',
+                'content': '<h2>感谢您的订阅！</h2><p>您已成功订阅我们的技术分享和项目更新。我们将定期为您发送最新的技术文章、项目案例和行业洞察。</p><p>如果您有任何问题或建议，请随时联系我们。</p>'
+            }
+            send_newsletter(email, newsletter_data)
+        except Exception as e:
+            current_app.logger.error(f'欢迎邮件发送失败: {str(e)}')
+        
+        flash('订阅成功！欢迎邮件已发送到您的邮箱。', 'success')
+        return redirect(request.referrer or url_for('main.index'))
+        
+    except Exception as e:
+        current_app.logger.error(f'邮件订阅错误: {str(e)}')
+        flash('订阅失败，请稍后重试。', 'error')
+        return redirect(request.referrer or url_for('main.index'))
+
+
+# 📧 取消订阅API
+@bp.route('/unsubscribe', methods=['GET'])
+def unsubscribe():
+    """
+    📧 取消邮件订阅
+    用户取消邮件订阅
+    """
+    try:
+        email = request.args.get('email')
+        if email:
+            # 这里应该从数据库中删除订阅记录
+            current_app.logger.info(f'取消订阅: {email}')
+            flash('已成功取消订阅。', 'info')
+        else:
+            flash('无效的取消订阅链接。', 'error')
+        
+        return redirect(url_for('main.index'))
+        
+    except Exception as e:
+        current_app.logger.error(f'取消订阅错误: {str(e)}')
+        flash('操作失败，请稍后重试。', 'error')
+        return redirect(url_for('main.index'))

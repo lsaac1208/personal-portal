@@ -1,0 +1,641 @@
+{% extends "base.html" %}
+
+{% block title %}媒体管理器 - 管理后台{% endblock %}
+{% block meta_description %}个人门户网站媒体文件管理界面，文件整理、存储分析和优化工具。{% endblock %}
+
+{% block extra_css %}
+<style>
+.media-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.stats-grid {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: var(--bs-secondary);
+    font-size: 0.875rem;
+}
+
+.folder-tree {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.folder-item {
+    padding: 0.5rem;
+    border-left: 3px solid var(--bs-primary);
+    margin: 0.25rem 0;
+    background-color: var(--bs-light);
+    border-radius: 0 0.25rem 0.25rem 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.folder-item:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.file-item {
+    padding: 0.3rem 0.5rem;
+    border-left: 2px solid var(--bs-success);
+    margin: 0.15rem 0 0.15rem 1rem;
+    background-color: rgba(25, 135, 84, 0.1);
+    border-radius: 0 0.25rem 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.storage-progress {
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: var(--bs-light);
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.tools-section {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.tool-card {
+    border: 1px solid var(--bs-gray-200);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.tool-card:hover {
+    border-color: var(--bs-primary);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.search-section {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.file-type-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0.1rem;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .stat-card,
+[data-bs-theme="dark"] .folder-tree,
+[data-bs-theme="dark"] .tools-section,
+[data-bs-theme="dark"] .search-section {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .tool-card {
+    background-color: var(--bs-gray-800);
+    border-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .stats-grid {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+@media (max-width: 768px) {
+    .media-header {
+        padding: 1.5rem;
+        margin: -0.5rem -0.5rem 1rem -0.5rem;
+    }
+    
+    .stats-grid, .folder-tree, .tools-section, .search-section {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="media-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">📂 媒体管理器</h1>
+                    <p class="mb-0 opacity-90">文件管理、存储分析和优化工具</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-light" onclick="refreshStats()">
+                        <i class="fas fa-sync-alt me-2"></i>刷新统计
+                    </button>
+                    <button class="btn btn-outline-light" onclick="exportReport()">
+                        <i class="fas fa-download me-2"></i>导出报告
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Storage Statistics -->
+            <div class="stats-grid">
+                <div class="row">
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card">
+                            <div class="stat-value text-primary">{{ stats.total_size_mb | round(1) }}</div>
+                            <div class="stat-label">总存储 (MB)</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card">
+                            <div class="stat-value text-info">{{ stats.total_files }}</div>
+                            <div class="stat-label">文件总数</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card">
+                            <div class="stat-value text-warning">{{ stats.large_files | length }}</div>
+                            <div class="stat-label">大文件 (>10MB)</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card">
+                            <div class="stat-value text-danger">{{ stats.old_files | length }}</div>
+                            <div class="stat-label">旧文件 (>30天)</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card">
+                            <div class="stat-value text-success">{{ stats.storage_usage_percent }}%</div>
+                            <div class="stat-label">存储使用率</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="stat-card">
+                            <div class="stat-value text-secondary">{{ stats.file_types | length }}</div>
+                            <div class="stat-label">文件类型</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Storage Progress Bar -->
+                <div class="storage-progress">
+                    <div class="progress-bar" 
+                         style="width: {{ stats.storage_usage_percent }}%; 
+                                background-color: {% if stats.storage_usage_percent > 80 %}var(--bs-danger){% elif stats.storage_usage_percent > 60 %}var(--bs-warning){% else %}var(--bs-success){% endif %};">
+                    </div>
+                </div>
+                <small class="text-muted">存储使用: {{ stats.total_size_mb | round(1) }} MB / 1000 MB</small>
+            </div>
+
+            <div class="row">
+                <!-- Folder Structure -->
+                <div class="col-lg-6">
+                    <div class="folder-tree">
+                        <h5 class="mb-3">
+                            <i class="fas fa-folder-tree me-2"></i>文件夹结构
+                        </h5>
+                        
+                        {% for folder_path, folder_data in folder_structure.items() %}
+                        <div class="folder-item" onclick="toggleFolder('{{ folder_path }}')">
+                            <i class="fas fa-folder me-2"></i>
+                            {{ folder_path if folder_path != '/' else '根目录' }}
+                            <span class="badge bg-primary ms-2">{{ folder_data.count }} 文件</span>
+                            <span class="badge bg-success ms-1">{{ folder_data.size | round(1) }} MB</span>
+                        </div>
+                        
+                        <div id="folder-{{ folder_path }}" class="folder-contents" style="display: none;">
+                            {% for file_info in folder_data.files[:5] %}
+                            <div class="file-item">
+                                <i class="fas {% if file_info.is_image %}fa-image{% else %}fa-file{% endif %} me-2"></i>
+                                {{ file_info.name }}
+                                <span class="badge bg-light text-dark ms-2">{{ file_info.size_mb }} MB</span>
+                                {% if file_info.is_image %}
+                                <span class="file-type-badge bg-info">图片</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% if folder_data.files | length > 5 %}
+                            <div class="file-item text-muted">
+                                ... 还有 {{ folder_data.files | length - 5 }} 个文件
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Management Tools -->
+                <div class="col-lg-6">
+                    <div class="tools-section">
+                        <h5 class="mb-3">
+                            <i class="fas fa-tools me-2"></i>管理工具
+                        </h5>
+
+                        <!-- File Organization -->
+                        <div class="tool-card">
+                            <h6 class="fw-bold">📁 文件整理</h6>
+                            <p class="text-muted small mb-3">按类型和日期自动整理散乱文件</p>
+                            <button class="btn btn-outline-primary" onclick="organizeFiles()">
+                                <i class="fas fa-magic me-2"></i>开始整理
+                            </button>
+                        </div>
+
+                        <!-- Cleanup Old Files -->
+                        <div class="tool-card">
+                            <h6 class="fw-bold">🗑️ 清理旧文件</h6>
+                            <p class="text-muted small mb-3">删除超过指定天数的旧文件</p>
+                            <div class="d-flex gap-2 align-items-center mb-2">
+                                <input type="number" class="form-control form-control-sm" id="cleanupDays" value="30" min="1" max="365" style="width: 80px;">
+                                <span class="text-muted small">天前的文件</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-warning btn-sm" onclick="cleanupFiles(true)">
+                                    <i class="fas fa-eye me-1"></i>预览
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="cleanupFiles(false)">
+                                    <i class="fas fa-trash me-1"></i>清理
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Image Optimization -->
+                        <div class="tool-card">
+                            <h6 class="fw-bold">🎨 图片优化</h6>
+                            <p class="text-muted small mb-3">批量压缩和优化所有图片文件</p>
+                            <button class="btn btn-outline-success" onclick="optimizeImages()">
+                                <i class="fas fa-compress me-2"></i>开始优化
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-search me-2"></i>文件搜索
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchQuery" 
+                                   placeholder="搜索文件名...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select mb-3" id="searchType">
+                            <option value="">所有类型</option>
+                            <option value="images">图片文件</option>
+                            <option value="documents">文档文件</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" onclick="searchFiles()">
+                            搜索
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Search Results -->
+                <div id="searchResults" style="display: none;">
+                    <h6 class="mt-4 mb-3">搜索结果</h6>
+                    <div id="searchResultsList"></div>
+                </div>
+            </div>
+
+            <!-- File Types Distribution -->
+            {% if stats.file_types %}
+            <div class="mt-4">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-pie me-2"></i>文件类型分布
+                </h5>
+                <div class="row">
+                    {% for ext, type_stats in stats.file_types.items() %}
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            <span class="file-type-badge {% if ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp'] %}bg-info{% elif ext in ['.pdf', '.doc', '.docx', '.txt'] %}bg-success{% elif ext in ['.zip', '.rar', '.7z'] %}bg-warning{% else %}bg-secondary{% endif %}">
+                                {{ ext if ext != 'no_extension' else '无扩展名' }}
+                            </span>
+                            <span class="ms-2 text-muted small">
+                                {{ type_stats.count }} 个文件 ({{ type_stats.size_mb | round(1) }} MB)
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Large Files Alert -->
+            {% if stats.large_files %}
+            <div class="alert alert-warning mt-4">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>大文件提醒</h6>
+                <p class="mb-2">发现 {{ stats.large_files | length }} 个大于 10MB 的文件：</p>
+                <ul class="mb-0">
+                    {% for file in stats.large_files[:3] %}
+                    <li>{{ file.name }} - {{ file.size_mb }} MB</li>
+                    {% endfor %}
+                    {% if stats.large_files | length > 3 %}
+                    <li class="text-muted">... 还有 {{ stats.large_files | length - 3 }} 个大文件</li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Refresh statistics
+function refreshStats() {
+    const btn = document.querySelector('button[onclick="refreshStats()"]');
+    const icon = btn.querySelector('i');
+    
+    icon.classList.add('fa-spin');
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+
+// Toggle folder contents
+function toggleFolder(folderPath) {
+    const contents = document.getElementById(`folder-${folderPath}`);
+    if (contents) {
+        contents.style.display = contents.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Organize files
+function organizeFiles() {
+    if (confirm('确定要开始整理文件吗？这将移动散乱的文件到对应的文件夹中。')) {
+        showLoading('正在整理文件...');
+        
+        fetch('/admin/media/organize', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                alert(data.message);
+                refreshStats();
+            } else {
+                alert('整理失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            alert('整理失败，请稍后重试');
+        });
+    }
+}
+
+// Cleanup old files
+function cleanupFiles(dryRun) {
+    const days = document.getElementById('cleanupDays').value;
+    const action = dryRun ? '预览清理' : '清理';
+    
+    if (confirm(`确定要${action}超过 ${days} 天的文件吗？`)) {
+        showLoading(dryRun ? '正在分析文件...' : '正在清理文件...');
+        
+        const formData = new FormData();
+        formData.append('days', days);
+        formData.append('dry_run', dryRun);
+        
+        fetch('/admin/media/cleanup', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                if (dryRun) {
+                    showCleanupPreview(data.files, data.size_saved_mb);
+                } else {
+                    alert(`清理完成！清理了 ${data.cleaned_count} 个文件，节省了 ${data.size_saved_mb} MB`);
+                    refreshStats();
+                }
+            } else {
+                alert('清理失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            alert('清理失败，请稍后重试');
+        });
+    }
+}
+
+// Optimize images
+function optimizeImages() {
+    if (confirm('确定要开始优化所有图片吗？这可能需要一些时间。')) {
+        showLoading('正在优化图片...');
+        
+        fetch('/admin/media/optimize', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                alert(data.message);
+                refreshStats();
+            } else {
+                alert('优化失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            alert('优化失败，请稍后重试');
+        });
+    }
+}
+
+// Search files
+function searchFiles() {
+    const query = document.getElementById('searchQuery').value;
+    const type = document.getElementById('searchType').value;
+    
+    if (!query.trim()) {
+        alert('请输入搜索关键词');
+        return;
+    }
+    
+    const params = new URLSearchParams();
+    params.append('query', query);
+    if (type) params.append('type', type);
+    
+    fetch('/admin/media/search?' + params)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySearchResults(data.results, data.count);
+            } else {
+                alert('搜索失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('搜索失败，请稍后重试');
+        });
+}
+
+// Display search results
+function displaySearchResults(results, count) {
+    const resultsDiv = document.getElementById('searchResults');
+    const listDiv = document.getElementById('searchResultsList');
+    
+    if (count === 0) {
+        listDiv.innerHTML = '<p class="text-muted">没有找到匹配的文件</p>';
+    } else {
+        let html = `<p class="text-info">找到 ${count} 个文件：</p>`;
+        html += '<div class="list-group">';
+        
+        results.forEach(file => {
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas ${file.is_image ? 'fa-image' : 'fa-file'} me-2"></i>
+                            <strong>${file.name}</strong>
+                            <small class="text-muted ms-2">${file.folder}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-secondary">${file.size_mb} MB</span>
+                            <small class="text-muted d-block">${file.modified_at}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        listDiv.innerHTML = html;
+    }
+    
+    resultsDiv.style.display = 'block';
+}
+
+// Show cleanup preview
+function showCleanupPreview(files, sizeSaved) {
+    let html = `<div class="alert alert-info">`;
+    html += `<h6>清理预览</h6>`;
+    html += `<p>将清理 ${files.length} 个文件，节省 ${sizeSaved} MB 存储空间：</p>`;
+    html += `<ul class="mb-0">`;
+    
+    files.slice(0, 10).forEach(file => {
+        html += `<li>${file.name} - ${file.size_mb} MB (${file.days_old} 天前)</li>`;
+    });
+    
+    if (files.length > 10) {
+        html += `<li class="text-muted">... 还有 ${files.length - 10} 个文件</li>`;
+    }
+    
+    html += `</ul></div>`;
+    
+    const resultsDiv = document.getElementById('searchResults');
+    const listDiv = document.getElementById('searchResultsList');
+    listDiv.innerHTML = html;
+    resultsDiv.style.display = 'block';
+}
+
+// Export report
+function exportReport() {
+    // Generate a simple report
+    const stats = {
+        totalSize: {{ stats.total_size_mb | round(1) }},
+        totalFiles: {{ stats.total_files }},
+        largeFiles: {{ stats.large_files | length }},
+        oldFiles: {{ stats.old_files | length }},
+        storageUsage: {{ stats.storage_usage_percent }}
+    };
+    
+    const report = `媒体存储报告\n生成时间: ${new Date().toLocaleString()}\n\n` +
+                  `总存储: ${stats.totalSize} MB\n` +
+                  `文件总数: ${stats.totalFiles}\n` +
+                  `大文件数: ${stats.largeFiles}\n` +
+                  `旧文件数: ${stats.oldFiles}\n` +
+                  `存储使用率: ${stats.storageUsage}%\n`;
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `media-report-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Loading utilities
+function showLoading(message) {
+    // Simple loading implementation
+    document.body.style.cursor = 'wait';
+    console.log(message);
+}
+
+function hideLoading() {
+    document.body.style.cursor = 'default';
+}
+
+// Search on Enter key
+document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchFiles();
+    }
+});
+</script>
+{% endblock %}

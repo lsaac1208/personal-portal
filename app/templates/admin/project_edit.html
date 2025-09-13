@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if project %}编辑项目{% else %}新建项目{% endif %} - 管理后台
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-{% if project %}edit{% else %}plus{% endif %} me-2 text-primary"></i>
+                {% if project %}编辑项目{% else %}新建项目{% endif %}
+            </h1>
+            <p class="text-muted mb-0">
+                {% if project %}修改项目信息和展示内容{% else %}创建新的项目展示页面{% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin.project_list') }}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i>返回列表
+            </a>
+            {% if project %}
+            <a href="{{ url_for('content.project_detail', id=project.id) }}" class="btn btn-outline-primary" target="_blank">
+                <i class="fas fa-eye me-2"></i>预览项目
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" enctype="multipart/form-data" id="projectForm">
+        {{ form.hidden_tag() }}
+        
+        <div class="row">
+            <!-- Left Column - Main Content -->
+            <div class="col-lg-8">
+                <!-- Basic Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle me-2"></i>基本信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Title -->
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label required") }}
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Subtitle -->
+                        <div class="mb-3">
+                            {{ form.subtitle.label(class="form-label") }}
+                            {{ form.subtitle(class="form-control") }}
+                            {% if form.subtitle.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.subtitle.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            {{ form.category.label(class="form-label required") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% if form.category.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.category.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label required") }}
+                            {{ form.description(class="form-control markdown-editor" + (" is-invalid" if form.description.errors else "")) }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">支持 Markdown 格式，可以添加代码块、链接等</div>
+                        </div>
+
+                        <!-- Features -->
+                        <div class="mb-3">
+                            {{ form.features.label(class="form-label") }}
+                            {{ form.features(class="form-control") }}
+                            <div class="form-text">项目的主要功能特色，每行一个</div>
+                        </div>
+
+                        <!-- Challenges -->
+                        <div class="mb-3">
+                            {{ form.challenges.label(class="form-label") }}
+                            {{ form.challenges(class="form-control") }}
+                            <div class="form-text">开发过程中遇到的技术挑战和解决方案</div>
+                        </div>
+
+                        <!-- Metrics -->
+                        <div class="mb-3">
+                            {{ form.metrics.label(class="form-label") }}
+                            {{ form.metrics(class="form-control") }}
+                            <div class="form-text">项目的量化成果，如用户数、性能提升等</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-code me-2"></i>技术信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Tech Stack -->
+                        <div class="mb-3">
+                            {{ form.tech_stack.label(class="form-label") }}
+                            {{ form.tech_stack(class="form-control", id="techStackInput") }}
+                            <div class="form-text">使用的技术和工具，用逗号分隔</div>
+                            <div id="techStackPreview" class="mt-2"></div>
+                        </div>
+
+                        <!-- Project Links -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.demo_url.label(class="form-label") }}
+                                {{ form.demo_url(class="form-control" + (" is-invalid" if form.demo_url.errors else "")) }}
+                                {% if form.demo_url.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.demo_url.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.github_url.label(class="form-label") }}
+                                {{ form.github_url(class="form-control" + (" is-invalid" if form.github_url.errors else "")) }}
+                                {% if form.github_url.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.github_url.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.documentation_url.label(class="form-label") }}
+                                {{ form.documentation_url(class="form-control" + (" is-invalid" if form.documentation_url.errors else "")) }}
+                                {% if form.documentation_url.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.documentation_url.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Timeline -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-calendar me-2"></i>时间线信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.start_date.label(class="form-label required") }}
+                                {{ form.start_date(class="form-control" + (" is-invalid" if form.start_date.errors else "")) }}
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.start_date.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.completion_date.label(class="form-label") }}
+                                {{ form.completion_date(class="form-control") }}
+                                <div class="form-text">如果项目已完成，请选择完成日期</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.duration_months.label(class="form-label") }}
+                                {{ form.duration_months(class="form-control") }}
+                                <div class="form-text">项目开发周期（月）</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.team_size.label(class="form-label") }}
+                                {{ form.team_size(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-tags me-2"></i>标签和分类
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            {{ form.tags.label(class="form-label") }}
+                            {{ form.tags(class="form-control", id="tagsInput") }}
+                            <div class="form-text">项目标签，用逗号分隔，有助于项目分类和搜索</div>
+                            <div id="tagsPreview" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Settings & Actions -->
+            <div class="col-lg-4">
+                <!-- Featured Image -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-image me-2"></i>项目图片
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Current Featured Image -->
+                        {% if project and project.featured_image %}
+                        <div class="mb-3" id="currentImage">
+                            <p class="form-label">当前图片：</p>
+                            <img src="{{ url_for('static', filename='uploads/' + project.featured_image) }}" 
+                                 class="img-fluid rounded mb-2" alt="项目图片"
+                                 style="max-height: 200px; object-fit: cover;">
+                            <br>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCurrentImage()">
+                                <i class="fas fa-trash me-1"></i>删除图片
+                            </button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Upload New Image -->
+                        <div class="mb-3">
+                            {{ form.featured_image.label(class="form-label") }}
+                            {{ form.featured_image(class="form-control", accept="image/*") }}
+                            {% if form.featured_image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.featured_image.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">支持 JPG, PNG, GIF, WebP 格式</div>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="d-none">
+                            <p class="form-label">新图片预览：</p>
+                            <img id="previewImg" src="" class="img-fluid rounded mb-2" style="max-height: 200px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Settings -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-cogs me-2"></i>项目设置
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Status -->
+                        <div class="mb-3">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-select") }}
+                        </div>
+
+                        <!-- Priority -->
+                        <div class="mb-3">
+                            {{ form.priority.label(class="form-label") }}
+                            {{ form.priority(class="form-select") }}
+                        </div>
+
+                        <!-- Settings Checkboxes -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_public(class="form-check-input") }}
+                                {{ form.is_public.label(class="form-check-label") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_featured(class="form-check-input") }}
+                                {{ form.is_featured.label(class="form-check-label") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.allow_inquiries(class="form-check-input") }}
+                                {{ form.allow_inquiries.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="save" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>保存项目
+                            </button>
+                            
+                            {% if project %}
+                            <button type="submit" name="action" value="save_and_preview" class="btn btn-outline-primary">
+                                <i class="fas fa-eye me-2"></i>保存并预览
+                            </button>
+                            {% endif %}
+
+                            <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                                <i class="fas fa-file-alt me-2"></i>保存草稿
+                            </button>
+
+                            <a href="{{ url_for('admin.project_list') }}" class="btn btn-outline-danger">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                        </div>
+
+                        {% if project %}
+                        <hr>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="duplicateProject()">
+                                <i class="fas fa-copy me-2"></i>复制项目
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Auto Save Status -->
+                <div class="card shadow">
+                    <div class="card-body text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-save me-1"></i>
+                            <span id="autoSaveStatus">自动保存已启用</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.markdown-editor {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    min-height: 200px;
+}
+
+.tech-stack-tag, .project-tag {
+    display: inline-block;
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.5rem;
+    margin: 0.125rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.card-header h6 {
+    margin-bottom: 0;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+#imagePreview img {
+    object-fit: cover;
+    width: 100%;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto save functionality
+let autoSaveTimeout;
+const autoSaveDelay = 30000; // 30 seconds
+
+function scheduleAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(autoSave, autoSaveDelay);
+}
+
+function autoSave() {
+    const formData = new FormData(document.getElementById('projectForm'));
+    formData.append('auto_save', 'true');
+    
+    fetch('{{ url_for("admin.content_auto_save") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateAutoSaveStatus('已自动保存 - ' + new Date().toLocaleTimeString());
+        } else {
+            updateAutoSaveStatus('自动保存失败');
+        }
+    })
+    .catch(error => {
+        console.error('Auto save error:', error);
+        updateAutoSaveStatus('自动保存错误');
+    });
+}
+
+function updateAutoSaveStatus(message) {
+    document.getElementById('autoSaveStatus').textContent = message;
+}
+
+// Monitor form changes for auto save
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('projectForm');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', scheduleAutoSave);
+        input.addEventListener('change', scheduleAutoSave);
+    });
+});
+
+// Tech stack preview
+function updateTechStackPreview() {
+    const input = document.getElementById('techStackInput');
+    const preview = document.getElementById('techStackPreview');
+    
+    if (input.value.trim()) {
+        const techs = input.value.split(',').map(tech => tech.trim()).filter(tech => tech);
+        preview.innerHTML = techs.map(tech => 
+            `<span class="tech-stack-tag">${tech}</span>`
+        ).join('');
+    } else {
+        preview.innerHTML = '';
+    }
+}
+
+// Tags preview
+function updateTagsPreview() {
+    const input = document.getElementById('tagsInput');
+    const preview = document.getElementById('tagsPreview');
+    
+    if (input.value.trim()) {
+        const tags = input.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+        preview.innerHTML = tags.map(tag => 
+            `<span class="project-tag">${tag}</span>`
+        ).join('');
+    } else {
+        preview.innerHTML = '';
+    }
+}
+
+// Image preview
+function handleImagePreview() {
+    const input = document.querySelector('input[name="featured_image"]');
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.classList.remove('d-none');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Remove current image
+function removeCurrentImage() {
+    if (confirm('确定要删除当前图片吗？')) {
+        document.getElementById('currentImage').style.display = 'none';
+        // Add a hidden input to mark image for deletion
+        const deleteInput = document.createElement('input');
+        deleteInput.type = 'hidden';
+        deleteInput.name = 'remove_featured_image';
+        deleteInput.value = 'true';
+        document.getElementById('projectForm').appendChild(deleteInput);
+    }
+}
+
+// Save draft
+function saveDraft() {
+    const form = document.getElementById('projectForm');
+    const draftInput = document.createElement('input');
+    draftInput.type = 'hidden';
+    draftInput.name = 'save_as_draft';
+    draftInput.value = 'true';
+    form.appendChild(draftInput);
+    form.submit();
+}
+
+// Duplicate project
+function duplicateProject() {
+    if (confirm('确定要复制这个项目吗？')) {
+        window.location.href = '{{ url_for("admin.duplicate_project", id=project.id) if project else "#" }}';
+    }
+}
+
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Tech stack preview
+    const techStackInput = document.getElementById('techStackInput');
+    if (techStackInput) {
+        techStackInput.addEventListener('input', updateTechStackPreview);
+        updateTechStackPreview(); // Initialize
+    }
+    
+    // Tags preview
+    const tagsInput = document.getElementById('tagsInput');
+    if (tagsInput) {
+        tagsInput.addEventListener('input', updateTagsPreview);
+        updateTagsPreview(); // Initialize
+    }
+    
+    // Image preview
+    const imageInput = document.querySelector('input[name="featured_image"]');
+    if (imageInput) {
+        imageInput.addEventListener('change', handleImagePreview);
+    }
+    
+    // Form validation
+    const form = document.getElementById('projectForm');
+    form.addEventListener('submit', function(e) {
+        const title = document.querySelector('input[name="title"]');
+        const description = document.querySelector('textarea[name="description"]');
+        
+        if (!title.value.trim()) {
+            e.preventDefault();
+            alert('请填写项目标题');
+            title.focus();
+            return false;
+        }
+        
+        if (!description.value.trim()) {
+            e.preventDefault();
+            alert('请填写项目描述');
+            description.focus();
+            return false;
+        }
+    });
+});
+
+// Markdown editor enhancements
+function insertMarkdown(before, after = '') {
+    const textarea = document.querySelector('.markdown-editor');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    textarea.value = text.substring(0, start) + before + selectedText + after + text.substring(end);
+    textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
+    textarea.focus();
+    scheduleAutoSave();
+}
+
+// Add markdown toolbar
+document.addEventListener('DOMContentLoaded', function() {
+    const editor = document.querySelector('.markdown-editor');
+    if (editor) {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'btn-toolbar mb-2';
+        toolbar.innerHTML = `
+            <div class="btn-group btn-group-sm me-2">
+                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('**', '**')" title="粗体">
+                    <i class="fas fa-bold"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('*', '*')" title="斜体">
+                    <i class="fas fa-italic"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('\`', '\`')" title="代码">
+                    <i class="fas fa-code"></i>
+                </button>
+            </div>
+            <div class="btn-group btn-group-sm me-2">
+                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('## ', '')" title="标题">
+                    <i class="fas fa-heading"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('- ', '')" title="列表">
+                    <i class="fas fa-list-ul"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('[', '](url)')" title="链接">
+                    <i class="fas fa-link"></i>
+                </button>
+            </div>
+        `;
+        editor.parentNode.insertBefore(toolbar, editor);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} - 项目详情 - 个人门户网站{% endblock %}
+{% block meta_description %}{{ project.description | striptags | truncate(160) }}{% endblock %}
+{% block meta_keywords %}{{ project.title }},{{ project.project_type }},{{ project.tech_stack or '' }},项目展示,技术作品{% endblock %}
+
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ project.title }}{% endblock %}
+{% block og_description %}{{ project.description | striptags | truncate(200) }}{% endblock %}
+{% block og_image %}
+{% if project.featured_image %}
+{{ url_for('static', filename='uploads/' + project.featured_image, _external=True) }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-3">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> 首页
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('content.portfolio') }}" class="text-decoration-none">项目作品集</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ project.title | truncate(30) }}
+            </li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<article class="container py-5">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Project Header -->
+            <header class="mb-5">
+                <!-- Project Type and Status -->
+                <div class="mb-3">
+                    <span class="badge bg-primary fs-6">
+                        <i class="fas fa-{{ 'globe' if project.project_type == 'Web应用' else 'mobile-alt' if project.project_type == '移动应用' else 'tools' if project.project_type == '工具库' else 'star' }} me-1"></i>
+                        {{ project.project_type }}
+                    </span>
+                    <span class="badge bg-{{ 'success' if project.status == '已完成' else 'warning' if project.status == '开发中' else 'secondary' }} fs-6 ms-2">
+                        {{ project.status }}
+                    </span>
+                    {% if project.is_featured %}
+                    <span class="badge bg-warning text-dark fs-6 ms-2">
+                        <i class="fas fa-star"></i> 精选项目
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Title and Subtitle -->
+                <h1 class="display-5 fw-bold text-dark mb-3">
+                    {{ project.title }}
+                </h1>
+                {% if project.subtitle %}
+                <p class="h4 text-muted fw-normal mb-4">
+                    {{ project.subtitle }}
+                </p>
+                {% endif %}
+                
+                <!-- Project Meta -->
+                <div class="project-meta d-flex flex-wrap align-items-center gap-4 mb-4 pb-4 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-alt text-muted me-2"></i>
+                        <span class="text-muted">
+                            开始时间：{{ moment(project.start_date).format('YYYY年MM月DD日') }}
+                        </span>
+                    </div>
+                    
+                    {% if project.completion_date %}
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-muted me-2"></i>
+                        <span class="text-muted">
+                            完成时间：{{ moment(project.completion_date).format('YYYY年MM月DD日') }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if project.duration %}
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clock text-muted me-2"></i>
+                        <span class="text-muted">
+                            开发周期：{{ project.duration }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if project.team_size %}
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-users text-muted me-2"></i>
+                        <span class="text-muted">
+                            团队规模：{{ project.team_size }}人
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Featured Image -->
+                {% if project.featured_image %}
+                <div class="mb-4">
+                    <img src="{{ url_for('static', filename='uploads/' + project.featured_image) }}" 
+                         class="img-fluid rounded shadow" alt="{{ project.title }}"
+                         style="width: 100%; max-height: 400px; object-fit: cover;">
+                </div>
+                {% endif %}
+                
+                <!-- Quick Actions -->
+                <div class="d-flex gap-2 mb-4">
+                    {% if project.demo_url %}
+                    <a href="{{ project.demo_url }}" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>在线演示
+                    </a>
+                    {% endif %}
+                    {% if project.github_url %}
+                    <a href="{{ project.github_url }}" class="btn btn-outline-dark" target="_blank">
+                        <i class="fab fa-github me-2"></i>查看源码
+                    </a>
+                    {% endif %}
+                    {% if project.download_url %}
+                    <a href="{{ project.download_url }}" class="btn btn-outline-success">
+                        <i class="fas fa-download me-2"></i>下载项目
+                    </a>
+                    {% endif %}
+                </div>
+            </header>
+            
+            <!-- Project Description -->
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-info-circle me-2"></i>项目介绍
+                </h2>
+                <div class="content-body">
+                    {{ render_markdown(project.description) | safe }}
+                </div>
+            </section>
+            
+            <!-- Features Section -->
+            {% if project.features %}
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-star me-2"></i>核心功能
+                </h2>
+                <div class="content-body">
+                    {{ render_markdown(project.features) | safe }}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Technical Details -->
+            {% if project.technical_details %}
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-cog me-2"></i>技术实现
+                </h2>
+                <div class="content-body">
+                    {{ render_markdown(project.technical_details) | safe }}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Challenges and Solutions -->
+            {% if project.challenges %}
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-puzzle-piece me-2"></i>挑战与解决方案
+                </h2>
+                <div class="content-body">
+                    {{ render_markdown(project.challenges) | safe }}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Screenshots/Gallery -->
+            {% if project.screenshots %}
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-images me-2"></i>项目截图
+                </h2>
+                <div class="row g-3">
+                    {% for screenshot in project.screenshots %}
+                    <div class="col-md-6">
+                        <img src="{{ url_for('static', filename='uploads/' + screenshot) }}" 
+                             class="img-fluid rounded shadow-sm" alt="项目截图"
+                             style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#screenshotModal">
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Lessons Learned -->
+            {% if project.lessons_learned %}
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>经验总结
+                </h2>
+                <div class="content-body">
+                    {{ render_markdown(project.lessons_learned) | safe }}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Future Plans -->
+            {% if project.future_plans %}
+            <section class="mb-5">
+                <h2 class="h3 mb-3">
+                    <i class="fas fa-road me-2"></i>未来规划
+                </h2>
+                <div class="content-body">
+                    {{ render_markdown(project.future_plans) | safe }}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Share Project -->
+            <div class="mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-share-alt me-2"></i>分享项目
+                </h6>
+                <div class="d-flex gap-2">
+                    <a href="https://twitter.com/intent/tweet?text={{ project.title }}&url={{ request.url }}" 
+                       target="_blank" class="btn btn-outline-info btn-sm">
+                        <i class="fab fa-twitter me-1"></i>Twitter
+                    </a>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url }}" 
+                       target="_blank" class="btn btn-outline-dark btn-sm">
+                        <i class="fab fa-linkedin me-1"></i>LinkedIn
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" id="copy-link">
+                        <i class="fas fa-link me-1"></i>复制链接
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Navigation to Other Projects -->
+            <nav class="mb-5">
+                <div class="row">
+                    {% if prev_project %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-chevron-left me-1"></i>上一个项目
+                                </h6>
+                                <h6 class="card-title">
+                                    <a href="{{ url_for('content.project_detail', id=prev_project.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ prev_project.title }}
+                                    </a>
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    {{ prev_project.project_type }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if next_project %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    下一个项目 <i class="fas fa-chevron-right ms-1"></i>
+                                </h6>
+                                <h6 class="card-title">
+                                    <a href="{{ url_for('content.project_detail', id=next_project.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ next_project.title }}
+                                    </a>
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    {{ next_project.project_type }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Sidebar -->
+        <aside class="col-lg-4">
+            <div class="sticky-top" style="top: 100px;">
+                <!-- Project Info -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info me-2"></i>项目信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless mb-0">
+                            <tr>
+                                <td class="text-muted">类型</td>
+                                <td>{{ project.project_type }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">状态</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if project.status == '已完成' else 'warning' if project.status == '开发中' else 'secondary' }}">
+                                        {{ project.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% if project.client %}
+                            <tr>
+                                <td class="text-muted">客户</td>
+                                <td>{{ project.client }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if project.role %}
+                            <tr>
+                                <td class="text-muted">角色</td>
+                                <td>{{ project.role }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Technology Stack -->
+                {% if project.tech_stack %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-layer-group me-2"></i>技术栈
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for tech in project.tech_stack %}
+                            <span class="badge bg-light text-primary">
+                                {{ tech }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Related Projects -->
+                {% if related_projects %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-project-diagram me-2"></i>相关项目
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for related in related_projects %}
+                        <div class="d-flex mb-3 {% if not loop.last %}pb-3 border-bottom{% endif %}">
+                            <div class="flex-shrink-0 me-3">
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-{{ 'globe' if related.project_type == 'Web应用' else 'mobile-alt' if related.project_type == '移动应用' else 'tools' if related.project_type == '工具库' else 'star' }}"></i>
+                                </span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('content.project_detail', id=related.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ related.title | truncate(30) }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">{{ related.project_type }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Contact CTA -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">
+                            <i class="fas fa-handshake me-2"></i>合作咨询
+                        </h6>
+                        <p class="card-text small text-muted">
+                            对这个项目感兴趣？需要类似解决方案？
+                        </p>
+                        <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-envelope me-1"></i>联系我
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</article>
+
+<!-- Screenshot Modal -->
+{% if project.screenshots %}
+<div class="modal fade" id="screenshotModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">项目截图</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" class="img-fluid" alt="项目截图">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.content-body {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #333;
+}
+
+.content-body h1,
+.content-body h2,
+.content-body h3,
+.content-body h4,
+.content-body h5,
+.content-body h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.project-meta {
+    font-size: 0.9rem;
+}
+
+.table td {
+    padding: 0.5rem 0;
+}
+
+.table td:first-child {
+    width: 30%;
+}
+
+@media (max-width: 768px) {
+    .project-meta {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+}
+
+/* Modal image styling */
+#modalImage {
+    max-height: 70vh;
+    cursor: zoom-in;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Copy link functionality
+document.getElementById('copy-link').addEventListener('click', async function() {
+    try {
+        await navigator.clipboard.writeText(window.location.href);
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-outline-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-outline-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+        
+    } catch (err) {
+        console.error('复制失败:', err);
+        window.PersonalPortal.showToast('复制链接失败', 'error');
+    }
+});
+
+// Screenshot modal functionality
+{% if project.screenshots %}
+document.addEventListener('DOMContentLoaded', function() {
+    const images = document.querySelectorAll('img[data-bs-toggle="modal"]');
+    const modalImage = document.getElementById('modalImage');
+    
+    images.forEach(img => {
+        img.addEventListener('click', function() {
+            modalImage.src = this.src;
+            modalImage.alt = this.alt;
+        });
+    });
+});
+{% endif %}
+</script>
+{% endblock %}

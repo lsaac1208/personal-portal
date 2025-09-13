@@ -1,0 +1,953 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑内容' if is_edit else '创建内容' }} - 管理后台{% endblock %}
+{% block meta_description %}{{ '编辑' if is_edit else '创建' }}内容页面，支持Markdown编辑器、实时预览、SEO优化、标签管理等功能。{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/github.min.css">
+<style>
+.content-editor {
+    min-height: calc(100vh - 200px);
+}
+
+.editor-container {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.editor-toolbar {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.editor-tabs {
+    display: flex;
+    border: none;
+}
+
+.editor-tabs .nav-link {
+    border: none;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    background: transparent;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.editor-tabs .nav-link.active {
+    background: #667eea;
+    color: white;
+}
+
+.CodeMirror {
+    height: 500px;
+    font-family: 'JetBrains Mono', 'Monaco', 'Menlo', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.preview-container {
+    padding: 2rem;
+    min-height: 500px;
+    background: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+}
+
+.preview-container h1, .preview-container h2, .preview-container h3,
+.preview-container h4, .preview-container h5, .preview-container h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    font-weight: 600;
+}
+
+.preview-container h1 { font-size: 2rem; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+.preview-container h2 { font-size: 1.5rem; }
+.preview-container h3 { font-size: 1.25rem; }
+
+.preview-container pre {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.preview-container code {
+    background: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+
+.preview-container blockquote {
+    border-left: 4px solid #667eea;
+    margin: 1rem 0;
+    padding-left: 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.preview-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.preview-container table th,
+.preview-container table td {
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.preview-container table th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.sidebar {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.sidebar h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-floating label {
+    color: #6c757d;
+}
+
+.tag-input {
+    position: relative;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.tag-suggestion {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.2s;
+}
+
+.tag-suggestion:hover,
+.tag-suggestion.active {
+    background-color: #f8f9fa;
+}
+
+.tag-suggestion:last-child {
+    border-bottom: none;
+}
+
+.current-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tag-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tag-badge .remove {
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 0.25rem;
+}
+
+.seo-analysis {
+    background: #f8f9fa;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.seo-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 1.25rem;
+    margin: 0 auto 1rem;
+}
+
+.seo-score.high { background: linear-gradient(135deg, #28a745, #20c997); }
+.seo-score.medium { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.seo-score.low { background: linear-gradient(135deg, #6c757d, #495057); }
+
+.seo-issues li {
+    margin-bottom: 0.5rem;
+    color: #dc3545;
+}
+
+.seo-recommendations li {
+    margin-bottom: 0.5rem;
+    color: #28a745;
+}
+
+.autosave-status {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    z-index: 1050;
+    display: none;
+}
+
+.autosave-status.show {
+    display: block;
+    animation: fadeInOut 2s;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+.editor-help {
+    background: #e3f2fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+}
+
+.word-count-info {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .CodeMirror {
+        height: 400px;
+    }
+    
+    .preview-container {
+        padding: 1rem;
+        min-height: 400px;
+    }
+    
+    .editor-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .editor-tabs {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- 主编辑区域 -->
+        <div class="col-lg-8">
+            <div class="editor-container">
+                <!-- 编辑器工具栏 -->
+                <div class="editor-toolbar">
+                    <div class="d-flex align-items-center gap-3">
+                        <h4 class="mb-0">{{ '编辑内容' if is_edit else '创建内容' }}</h4>
+                        <div class="word-count-info">
+                            <span id="wordCount">0</span> 字 | 
+                            <span id="readingTime">0</span> 分钟阅读
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="insertMarkdown('**', '**', '粗体文字')">
+                            <i class="bi bi-type-bold"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="insertMarkdown('*', '*', '斜体文字')">
+                            <i class="bi bi-type-italic"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="insertMarkdown('`', '`', '代码')">
+                            <i class="bi bi-code"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="insertMarkdown('## ', '', '标题')">
+                            <i class="bi bi-type-h2"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="insertMarkdown('[', '](url)', '链接文字')">
+                            <i class="bi bi-link"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="insertMarkdown('![', '](url)', '图片描述')">
+                            <i class="bi bi-image"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 编辑器标签页 -->
+                <ul class="nav nav-tabs editor-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#editor-tab" role="tab">
+                            <i class="bi bi-pencil me-2"></i>编辑
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#preview-tab" role="tab" onclick="updatePreview()">
+                            <i class="bi bi-eye me-2"></i>预览
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- 编辑器内容 -->
+                <div class="tab-content">
+                    <div class="tab-pane active" id="editor-tab">
+                        <form id="contentForm" method="POST" action="{{ url_for('content_management.edit_content', id=content.id) if is_edit else url_for('content_management.create_content') }}">
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- 标题 -->
+                            <div class="p-3 border-bottom">
+                                <div class="form-floating">
+                                    {{ form.title(class="form-control form-control-lg", placeholder="请输入内容标题...") }}
+                                    {{ form.title.label(class="form-label") }}
+                                </div>
+                            </div>
+
+                            <!-- Markdown编辑器 -->
+                            <div class="p-0">
+                                {{ form.content(id="markdownEditor", style="display: none;") }}
+                                <div id="codeEditor"></div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="tab-pane" id="preview-tab">
+                        <div class="preview-container" id="previewContent">
+                            <p class="text-muted">内容预览将显示在这里...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Markdown帮助 -->
+            <div class="editor-help mt-3">
+                <h6><i class="bi bi-question-circle me-2"></i>Markdown 语法帮助</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small>
+                            <strong>标题：</strong> # H1 ## H2 ### H3<br>
+                            <strong>粗体：</strong> **粗体文字**<br>
+                            <strong>斜体：</strong> *斜体文字*<br>
+                            <strong>代码：</strong> `代码` 或 ```代码块```
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small>
+                            <strong>链接：</strong> [链接文字](URL)<br>
+                            <strong>图片：</strong> ![描述](图片URL)<br>
+                            <strong>引用：</strong> > 引用文字<br>
+                            <strong>列表：</strong> - 无序列表 或 1. 有序列表
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧边栏 -->
+        <div class="col-lg-4">
+            <!-- 发布设置 -->
+            <div class="sidebar">
+                <h6><i class="bi bi-gear me-2"></i>发布设置</h6>
+                
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.category(class="form-select") }}
+                        {{ form.category.label(class="form-label") }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.status(class="form-select") }}
+                        {{ form.status.label(class="form-label") }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="form-check">
+                            {{ form.is_published(class="form-check-input") }}
+                            {{ form.is_published.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            {{ form.is_featured(class="form-check-input") }}
+                            {{ form.is_featured.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.difficulty(class="form-select") }}
+                        {{ form.difficulty.label(class="form-label") }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.priority(class="form-select") }}
+                        {{ form.priority.label(class="form-label") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容摘要 -->
+            <div class="sidebar">
+                <h6><i class="bi bi-file-text me-2"></i>内容摘要</h6>
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.summary(class="form-control", style="height: 100px", placeholder="内容摘要...") }}
+                        {{ form.summary.label(class="form-label") }}
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="generateSummary()">
+                    <i class="bi bi-magic me-2"></i>自动生成
+                </button>
+            </div>
+
+            <!-- 标签管理 -->
+            <div class="sidebar">
+                <h6><i class="bi bi-tags me-2"></i>标签管理</h6>
+                <div class="tag-input mb-3">
+                    <div class="form-floating">
+                        {{ form.tags(class="form-control", placeholder="输入标签，用逗号分隔...") }}
+                        {{ form.tags.label(class="form-label") }}
+                    </div>
+                    <div class="tag-suggestions" id="tagSuggestions"></div>
+                </div>
+
+                <div class="current-tags" id="currentTags"></div>
+
+                {% if popular_tags %}
+                <div class="mt-3">
+                    <small class="text-muted">热门标签：</small>
+                    <div class="mt-2">
+                        {% for tag in popular_tags[:10] %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1 mb-1" 
+                                onclick="addTag('{{ tag.name }}')">
+                            {{ tag.name }} <span class="badge bg-secondary">{{ tag.usage_count }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- SEO优化 -->
+            <div class="sidebar">
+                <h6><i class="bi bi-search me-2"></i>SEO优化</h6>
+                
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.seo_title(class="form-control") }}
+                        {{ form.seo_title.label(class="form-label") }}
+                    </div>
+                    <small class="text-muted">建议长度：10-60字符</small>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.seo_description(class="form-control", style="height: 80px") }}
+                        {{ form.seo_description.label(class="form-label") }}
+                    </div>
+                    <small class="text-muted">建议长度：120-160字符</small>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.seo_keywords(class="form-control") }}
+                        {{ form.seo_keywords.label(class="form-label") }}
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="analyzeSEO()">
+                    <i class="bi bi-graph-up me-2"></i>SEO分析
+                </button>
+
+                {% if seo_analysis %}
+                <div class="seo-analysis">
+                    <div class="text-center">
+                        <div class="seo-score {{ 'high' if seo_analysis.score >= 80 else 'medium' if seo_analysis.score >= 60 else 'low' }}">
+                            {{ seo_analysis.score }}
+                        </div>
+                        <h6>SEO评分</h6>
+                    </div>
+
+                    {% if seo_analysis.issues %}
+                    <div class="mt-3">
+                        <h6 class="text-danger">需要优化</h6>
+                        <ul class="seo-issues small">
+                            {% for issue in seo_analysis.issues %}
+                            <li>{{ issue }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if seo_analysis.recommendations %}
+                    <div class="mt-3">
+                        <h6 class="text-success">优化建议</h6>
+                        <ul class="seo-recommendations small">
+                            {% for rec in seo_analysis.recommendations %}
+                            <li>{{ rec }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 特色图片 -->
+            <div class="sidebar">
+                <h6><i class="bi bi-image me-2"></i>特色图片</h6>
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{ form.featured_image(class="form-control") }}
+                        {{ form.featured_image.label(class="form-label") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="sidebar">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary" form="contentForm" name="action" value="save">
+                        <i class="bi bi-check-lg me-2"></i>{{ '更新内容' if is_edit else '发布内容' }}
+                    </button>
+                    <button type="submit" class="btn btn-success" form="contentForm" name="action" value="save_and_preview">
+                        <i class="bi bi-eye me-2"></i>保存并预览
+                    </button>
+                    <button type="submit" class="btn btn-outline-secondary" form="contentForm" name="action" value="save_and_continue">
+                        <i class="bi bi-arrow-right me-2"></i>保存并继续编辑
+                    </button>
+                    <a href="{{ url_for('content_management.content_list') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-x-lg me-2"></i>取消
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 自动保存状态提示 -->
+<div class="autosave-status" id="autosaveStatus">
+    <i class="bi bi-cloud-check me-2"></i>
+    <span id="autosaveText">自动保存中...</span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+
+<script>
+let editor;
+let autosaveTimer;
+let wordCountTimer;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化CodeMirror编辑器
+    const textarea = document.getElementById('markdownEditor') || document.getElementById('{{ form.content.id }}');
+    editor = CodeMirror(document.getElementById('codeEditor'), {
+        value: textarea.value,
+        mode: 'markdown',
+        theme: 'github',
+        lineNumbers: true,
+        lineWrapping: true,
+        autofocus: true,
+        extraKeys: {
+            'Ctrl-S': function(cm) { saveContent(); },
+            'Ctrl-P': function(cm) { updatePreview(); },
+            'Tab': function(cm) { cm.replaceSelection('    '); }
+        }
+    });
+
+    // 监听编辑器变化
+    editor.on('change', function(cm) {
+        textarea.value = cm.getValue();
+        startAutosave();
+        updateWordCount();
+    });
+
+    // 初始化标签功能
+    initTagManager();
+    
+    // 初始化字数统计
+    updateWordCount();
+
+    // 键盘快捷键
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            saveContent();
+        }
+    });
+});
+
+// 自动保存
+function startAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(function() {
+        autosaveContent();
+    }, 3000); // 3秒后自动保存
+}
+
+function autosaveContent() {
+    const formData = new FormData();
+    formData.append('content_id', '{{ content.id if is_edit else "" }}');
+    formData.append('title', document.getElementById('{{ form.title.id }}').value);
+    formData.append('content', editor.getValue());
+    formData.append('summary', document.getElementById('{{ form.summary.id }}').value);
+    formData.append('category', document.getElementById('{{ form.category.id }}').value);
+
+    showAutosaveStatus('自动保存中...');
+
+    fetch('{{ url_for("content_management.autosave_content") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(Object.fromEntries(formData))
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAutosaveStatus('已自动保存 ' + data.last_saved);
+            if (data.word_count) {
+                document.getElementById('wordCount').textContent = data.word_count;
+            }
+            if (data.reading_time) {
+                document.getElementById('readingTime').textContent = data.reading_time;
+            }
+        } else {
+            showAutosaveStatus('自动保存失败');
+        }
+    })
+    .catch(error => {
+        console.error('Autosave error:', error);
+        showAutosaveStatus('自动保存失败');
+    });
+}
+
+function showAutosaveStatus(text) {
+    const status = document.getElementById('autosaveStatus');
+    const statusText = document.getElementById('autosaveText');
+    statusText.textContent = text;
+    status.classList.add('show');
+    
+    setTimeout(() => {
+        status.classList.remove('show');
+    }, 2000);
+}
+
+// 实时预览
+function updatePreview() {
+    const content = editor.getValue();
+    if (!content.trim()) {
+        document.getElementById('previewContent').innerHTML = '<p class="text-muted">内容预览将显示在这里...</p>';
+        return;
+    }
+
+    fetch('{{ url_for("content_management.markdown_preview") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('previewContent').innerHTML = data.html;
+        } else {
+            document.getElementById('previewContent').innerHTML = '<p class="text-danger">预览生成失败</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Preview error:', error);
+        document.getElementById('previewContent').innerHTML = '<p class="text-danger">预览生成失败</p>';
+    });
+}
+
+// 字数统计
+function updateWordCount() {
+    clearTimeout(wordCountTimer);
+    wordCountTimer = setTimeout(function() {
+        const content = editor.getValue();
+        const chineseChars = (content.match(/[\u4e00-\u9fff]/g) || []).length;
+        const englishWords = (content.match(/[a-zA-Z]+/g) || []).length;
+        const totalWords = chineseChars + englishWords;
+        const readingTime = Math.max(1, Math.round(totalWords / 200));
+
+        document.getElementById('wordCount').textContent = totalWords;
+        document.getElementById('readingTime').textContent = readingTime;
+    }, 500);
+}
+
+// Markdown工具栏
+function insertMarkdown(before, after, placeholder) {
+    const selection = editor.getSelection();
+    const text = selection || placeholder;
+    const replacement = before + text + after;
+    
+    if (selection) {
+        editor.replaceSelection(replacement);
+    } else {
+        const cursor = editor.getCursor();
+        editor.replaceRange(replacement, cursor);
+        editor.setCursor({
+            line: cursor.line,
+            ch: cursor.ch + before.length + text.length + after.length
+        });
+    }
+    
+    editor.focus();
+}
+
+// 标签管理
+function initTagManager() {
+    const tagInput = document.getElementById('{{ form.tags.id }}');
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    
+    // 显示当前标签
+    updateCurrentTags();
+    
+    tagInput.addEventListener('input', function() {
+        const query = this.value.split(',').pop().trim();
+        if (query.length >= 2) {
+            showTagSuggestions(query);
+        } else {
+            hideTagSuggestions();
+        }
+    });
+
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const tags = this.value.split(',').map(t => t.trim()).filter(t => t);
+            this.value = tags.join(', ');
+            updateCurrentTags();
+        }
+    });
+
+    tagInput.addEventListener('blur', function() {
+        setTimeout(() => hideTagSuggestions(), 200);
+    });
+}
+
+function showTagSuggestions(query) {
+    // 这里可以从服务器获取建议，现在使用热门标签作为示例
+    const suggestions = [
+        {% if popular_tags %}
+        {% for tag in popular_tags %}
+        '{{ tag.name }}',
+        {% endfor %}
+        {% endif %}
+    ].filter(tag => tag.toLowerCase().includes(query.toLowerCase()));
+
+    const suggestionsDiv = document.getElementById('tagSuggestions');
+    if (suggestions.length > 0) {
+        suggestionsDiv.innerHTML = suggestions.map(tag => 
+            `<div class="tag-suggestion" onclick="selectTagSuggestion('${tag}')">${tag}</div>`
+        ).join('');
+        suggestionsDiv.style.display = 'block';
+    } else {
+        hideTagSuggestions();
+    }
+}
+
+function hideTagSuggestions() {
+    document.getElementById('tagSuggestions').style.display = 'none';
+}
+
+function selectTagSuggestion(tag) {
+    const tagInput = document.getElementById('{{ form.tags.id }}');
+    const currentTags = tagInput.value.split(',').map(t => t.trim()).filter(t => t);
+    const lastTag = currentTags.pop();
+    currentTags.push(tag);
+    tagInput.value = currentTags.join(', ') + ', ';
+    hideTagSuggestions();
+    updateCurrentTags();
+    tagInput.focus();
+}
+
+function addTag(tag) {
+    const tagInput = document.getElementById('{{ form.tags.id }}');
+    const currentTags = tagInput.value.split(',').map(t => t.trim()).filter(t => t);
+    if (!currentTags.includes(tag)) {
+        currentTags.push(tag);
+        tagInput.value = currentTags.join(', ');
+        updateCurrentTags();
+    }
+}
+
+function removeTag(tag) {
+    const tagInput = document.getElementById('{{ form.tags.id }}');
+    const currentTags = tagInput.value.split(',').map(t => t.trim()).filter(t => t && t !== tag);
+    tagInput.value = currentTags.join(', ');
+    updateCurrentTags();
+}
+
+function updateCurrentTags() {
+    const tagInput = document.getElementById('{{ form.tags.id }}');
+    const currentTags = tagInput.value.split(',').map(t => t.trim()).filter(t => t);
+    const tagsDiv = document.getElementById('currentTags');
+    
+    tagsDiv.innerHTML = currentTags.map(tag => 
+        `<span class="tag-badge">
+            ${tag}
+            <span class="remove" onclick="removeTag('${tag}')">&times;</span>
+        </span>`
+    ).join('');
+}
+
+// SEO分析
+function analyzeSEO() {
+    const contentId = '{{ content.id if is_edit else "" }}';
+    if (!contentId) {
+        alert('请先保存内容后再进行SEO分析');
+        return;
+    }
+
+    fetch(`{{ url_for("content_management.seo_analysis", id=0) }}`.replace('0', contentId))
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 更新SEO显示
+            location.reload(); // 简单方式，实际可以动态更新
+        } else {
+            alert('SEO分析失败：' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('SEO analysis error:', error);
+        alert('SEO分析失败');
+    });
+}
+
+// 自动生成摘要
+function generateSummary() {
+    const contentId = '{{ content.id if is_edit else "" }}';
+    const content = editor.getValue();
+    
+    if (!content.trim()) {
+        alert('请先输入内容');
+        return;
+    }
+
+    const data = {
+        length: 150,
+        force_regenerate: true
+    };
+
+    if (contentId) {
+        fetch(`{{ url_for("content_management.generate_summary", id=0) }}`.replace('0', contentId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('{{ form.summary.id }}').value = data.summary;
+                if (data.keywords) {
+                    document.getElementById('{{ form.seo_keywords.id }}').value = data.keywords;
+                }
+            } else {
+                alert('摘要生成失败：' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Generate summary error:', error);
+            alert('摘要生成失败');
+        });
+    } else {
+        // 简单的客户端摘要生成
+        const sentences = content.split(/[。！？.!?]/).filter(s => s.trim());
+        let summary = '';
+        for (let sentence of sentences) {
+            if (summary.length + sentence.length <= 150) {
+                summary += sentence + '。';
+            } else {
+                break;
+            }
+        }
+        document.getElementById('{{ form.summary.id }}').value = summary.slice(0, -1);
+    }
+}
+
+// 保存内容
+function saveContent() {
+    document.getElementById('contentForm').submit();
+}
+
+// 防止意外离开
+window.addEventListener('beforeunload', function(e) {
+    if (editor && editor.getValue() !== '{{ content.content if is_edit else "" }}') {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+</script>
+{% endblock %}

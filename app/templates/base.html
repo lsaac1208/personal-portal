@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- SEO Meta Tags -->
+    <title>{% block title %}个人门户网站 - 技术分享与项目展示{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}专业的技术博客、项目作品集和在线咨询平台，分享技术见解、展示项目成果、提供专业服务。{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}技术博客,项目展示,作品集,在线咨询,Web开发,Python,Flask{% endblock %}">
+    <meta name="author" content="{% block meta_author %}Your Name{% endblock %}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/og-image.jpg', _external=True) }}{% endblock %}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ self.og_url() }}">
+    <meta property="twitter:title" content="{{ self.og_title() }}">
+    <meta property="twitter:description" content="{{ self.og_description() }}">
+    <meta property="twitter:image" content="{{ self.og_image() }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+    
+    <!-- Local Bootstrap CSS -->
+    <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+    
+    <!-- FontAwesome CDN (fallback for missing local fonts) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <!-- Local FontAwesome (backup) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/all.min.css') }}">
+    
+    <!-- System Fonts (替代Google Fonts) -->
+    <style>
+    :root {
+        --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    body { font-family: var(--font-family-sans); }
+    code, pre, .font-mono { font-family: var(--font-family-mono); }
+    </style>
+    
+    <!-- Local Prism.js for Code Highlighting -->
+    <link href="{{ url_for('static', filename='vendor/prism/prism.min.css') }}" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
+    <!-- Block for additional CSS -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "{% block schema_type %}Person{% endblock %}",
+        "name": "{{ self.meta_author() }}",
+        "url": "{{ request.url_root }}",
+        "description": "{{ self.meta_description() }}",
+        "sameAs": [
+            "https://github.com/yourusername",
+            "https://linkedin.com/in/yourusername"
+        ]
+    }
+    </script>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    <!-- Skip to main content link for accessibility -->
+    <a class="visually-hidden-focusable btn btn-primary position-absolute top-0 start-0 m-2" href="#main-content">
+        跳转到主要内容
+    </a>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm" id="main-navbar">
+        <div class="container">
+            <!-- Brand -->
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('main.index') }}">
+                <i class="fas fa-code me-2"></i>
+                <span>{% block brand_name %}个人门户{% endblock %}</span>
+            </a>
+
+            <!-- Mobile toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="切换导航">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation items -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" 
+                           href="{{ url_for('main.index') }}">
+                            <i class="fas fa-home me-1"></i>首页
+                        </a>
+                    </li>
+                    
+                    <!-- Content categories dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint and 'content' in request.endpoint %}active{% endif %}" 
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-blog me-1"></i>内容分享
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('content.category_list', category='技术') }}">
+                                <i class="fas fa-laptop-code me-2"></i>技术文章</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('content.category_list', category='观察') }}">
+                                <i class="fas fa-eye me-2"></i>行业观察</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('content.category_list', category='生活') }}">
+                                <i class="fas fa-heart me-2"></i>生活分享</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('content.category_list', category='创作') }}">
+                                <i class="fas fa-palette me-2"></i>创作作品</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('content.category_list', category='代码') }}">
+                                <i class="fas fa-code me-2"></i>代码片段</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('content.all_content') }}">
+                                <i class="fas fa-list me-2"></i>全部内容</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Projects dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint and ('portfolio' in request.endpoint or 'timeline' in request.endpoint) %}active{% endif %}" 
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-briefcase me-1"></i>项目作品
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('content.portfolio') }}">
+                                <i class="fas fa-th-large me-2"></i>作品集展示</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('content.project_timeline') }}">
+                                <i class="fas fa-history me-2"></i>项目时间线</a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.inquiry_form' %}active{% endif %}" 
+                           href="{{ url_for('main.inquiry_form') }}">
+                            <i class="fas fa-envelope me-1"></i>在线咨询
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Right side navigation -->
+                <ul class="navbar-nav">
+                    <!-- Search -->
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" data-bs-toggle="modal" data-bs-target="#searchModal">
+                            <i class="fas fa-search"></i>
+                            <span class="d-lg-none ms-1">搜索</span>
+                        </button>
+                    </li>
+                    
+                    <!-- Theme toggle -->
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" id="theme-toggle" title="切换主题">
+                            <i class="fas fa-sun" id="theme-icon"></i>
+                        </button>
+                    </li>
+                    
+                    <!-- Admin login (if not logged in) -->
+                    {% if not current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i>
+                            <span class="d-lg-none">管理员</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <!-- Admin dropdown (if logged in) -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-shield me-1"></i>
+                            <span class="d-none d-lg-inline">{{ current_user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>管理后台</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.content_list') }}">
+                                <i class="fas fa-edit me-2"></i>内容管理</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.inquiry_list') }}">
+                                <i class="fas fa-inbox me-2"></i>咨询管理</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' if category == 'info' else 'check-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Breadcrumb (optional) -->
+    {% block breadcrumb %}{% endblock %}
+
+    <!-- Main Content -->
+    <main class="flex-grow-1" id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-5 mt-5">
+        <div class="container">
+            <div class="row g-4">
+                <!-- About section -->
+                <div class="col-lg-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="fas fa-user-circle me-2"></i>关于我
+                    </h5>
+                    <p class="text-muted">
+                        专注于Web开发和技术分享的全栈开发者，热衷于创建优质的技术内容和开源项目。
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="https://github.com/yourusername" class="text-light" title="GitHub" target="_blank">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                        <a href="https://linkedin.com/in/yourusername" class="text-light" title="LinkedIn" target="_blank">
+                            <i class="fab fa-linkedin fa-lg"></i>
+                        </a>
+                        <a href="mailto:your@email.com" class="text-light" title="邮箱">
+                            <i class="fas fa-envelope fa-lg"></i>
+                        </a>
+                        <a href="{{ url_for('content.rss_feed') }}" class="text-light" title="RSS订阅">
+                            <i class="fas fa-rss fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Quick links -->
+                <div class="col-lg-2 col-md-6">
+                    <h5 class="text-primary mb-3">快速导航</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{{ url_for('main.index') }}" class="text-muted text-decoration-none">首页</a></li>
+                        <li class="mb-2"><a href="{{ url_for('content.all_content') }}" class="text-muted text-decoration-none">全部文章</a></li>
+                        <li class="mb-2"><a href="{{ url_for('content.portfolio') }}" class="text-muted text-decoration-none">项目作品</a></li>
+                        <li class="mb-2"><a href="{{ url_for('main.inquiry_form') }}" class="text-muted text-decoration-none">联系我</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Categories -->
+                <div class="col-lg-2 col-md-6">
+                    <h5 class="text-primary mb-3">内容分类</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{{ url_for('content.category_list', category='技术') }}" class="text-muted text-decoration-none">技术文章</a></li>
+                        <li class="mb-2"><a href="{{ url_for('content.category_list', category='观察') }}" class="text-muted text-decoration-none">行业观察</a></li>
+                        <li class="mb-2"><a href="{{ url_for('content.category_list', category='生活') }}" class="text-muted text-decoration-none">生活分享</a></li>
+                        <li class="mb-2"><a href="{{ url_for('content.category_list', category='代码') }}" class="text-muted text-decoration-none">代码片段</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Newsletter -->
+                <div class="col-lg-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="fas fa-envelope me-2"></i>邮件订阅
+                    </h5>
+                    <p class="text-muted mb-3">订阅我的邮件，获取最新的技术文章和项目更新。</p>
+                    <form class="d-flex flex-column" method="POST" action="{{ url_for('api.newsletter_subscribe') }}">
+                        <div class="input-group mb-2">
+                            <input type="email" class="form-control" placeholder="输入您的邮箱" name="email" required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">我承诺不会发送垃圾邮件</small>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Copyright -->
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="text-muted mb-0">
+                        © 2024 {{ self.meta_author() }}. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted mb-0">
+                        Powered by <a href="https://flask.palletsprojects.com/" class="text-primary text-decoration-none">Flask</a> 
+                        & <a href="https://getbootstrap.com/" class="text-primary text-decoration-none">Bootstrap</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Search Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="searchModalLabel">
+                        <i class="fas fa-search me-2"></i>搜索内容
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="GET" action="{{ url_for('content.search') }}">
+                        <div class="input-group input-group-lg">
+                            <input type="text" class="form-control" placeholder="搜索文章、项目、代码..." 
+                                   name="q" id="search-input" autocomplete="off">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                支持搜索标题、内容、标签等，按回车键快速搜索
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to top button -->
+    <button class="btn btn-primary position-fixed bottom-0 end-0 m-4 rounded-circle d-none" 
+            id="scrollTopBtn" title="返回顶部" style="z-index: 1000;">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Local Bootstrap JS -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    
+    <!-- Local Prism.js for code highlighting -->
+    <script src="{{ url_for('static', filename='vendor/prism/prism.min.js') }}"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Block for additional JS -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

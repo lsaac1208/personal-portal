@@ -1,0 +1,104 @@
+/*!
+ * Font Awesome Free 6.4.0 (minimal version)
+ * License - https://fontawesome.com/license (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ */
+
+/* 基础样式 */
+.fa,.fas,.far,.fal,.fad,.fab{
+  -moz-osx-font-smoothing:grayscale;
+  -webkit-font-smoothing:antialiased;
+  display:inline-block;
+  font-style:normal;
+  font-variant:normal;
+  text-rendering:auto;
+  line-height:1;
+}
+
+.fas{font-family:"Font Awesome 6 Free";font-weight:900}
+.far{font-family:"Font Awesome 6 Free";font-weight:400}
+.fab{font-family:"Font Awesome 6 Brands";font-weight:400}
+
+/* 图标内容 - 使用Unicode字符作为备选 */
+.fa-home::before{content:"🏠"}
+.fa-blog::before{content:"📝"}
+.fa-briefcase::before{content:"💼"}
+.fa-envelope::before{content:"✉️"}
+.fa-search::before{content:"🔍"}
+.fa-sun::before{content:"☀️"}
+.fa-moon::before{content:"🌙"}
+.fa-arrow-up::before{content:"↑"}
+.fa-arrow-left::before{content:"←"}
+.fa-check::before{content:"✓"}
+.fa-times::before{content:"✕"}
+.fa-user::before{content:"👤"}
+.fa-cog::before{content:"⚙️"}
+.fa-edit::before{content:"✏️"}
+.fa-trash::before{content:"🗑️"}
+.fa-plus::before{content:"+"}
+.fa-minus::before{content:"-"}
+.fa-star::before{content:"★"}
+.fa-heart::before{content:"❤️"}
+.fa-code::before{content:"</>"}
+.fa-laptop-code::before{content:"💻"}
+.fa-eye::before{content:"👁️"}
+.fa-palette::before{content:"🎨"}
+.fa-list::before{content:"📋"}
+.fa-th-large::before{content:"▦"}
+.fa-history::before{content:"🕒"}
+.fa-sign-in-alt::before{content:"🔑"}
+.fa-sign-out-alt::before{content:"🚪"}
+.fa-user-shield::before{content:"🛡️"}
+.fa-tachometer-alt::before{content:"⚡"}
+.fa-inbox::before{content:"📥"}
+.fa-info-circle::before{content:"ℹ️"}
+.fa-check-circle::before{content:"✅"}
+.fa-exclamation-triangle::before{content:"⚠️"}
+.fa-spinner::before{content:"⟳"}
+.fa-sync-alt::before{content:"🔄"}
+.fa-copy::before{content:"📋"}
+.fa-phone::before{content:"📞"}
+.fa-rss::before{content:"📡"}
+.fa-clock::before{content:"🕒"}
+.fa-shield-alt::before{content:"🛡️"}
+.fa-hashtag::before{content:"#"}
+.fa-keyboard::before{content:"⌨️"}
+.fa-bug::before{content:"🐛"}
+.fa-redo::before{content:"↻"}
+.fa-paper-plane::before{content:"📧"}
+.fa-lightbulb::before{content:"💡"}
+.fa-sync::before{content:"🔄"}
+
+/* Brand icons */
+.fa-github::before{content:"GitHub"}
+.fa-linkedin::before{content:"LinkedIn"}
+.fa-weixin::before{content:"微信"}
+
+/* 尺寸 */
+.fa-xs{font-size:.75em;line-height:.08333em;vertical-align:.125em}
+.fa-sm{font-size:.875em;line-height:.07143em;vertical-align:.05357em}
+.fa-lg{font-size:1.33333em;line-height:.75em;vertical-align:-.22222em}
+.fa-xl{font-size:1.5em;line-height:.66667em;vertical-align:-.25em}
+.fa-2x{font-size:2em}
+.fa-3x{font-size:3em}
+.fa-4x{font-size:4em}
+.fa-5x{font-size:5em}
+
+/* 动画 */
+.fa-spin{animation:fa-spin 2s infinite linear}
+@keyframes fa-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+/* 间距 */
+.me-1{margin-right:.25rem}
+.me-2{margin-right:.5rem}
+.ms-1{margin-left:.25rem}
+.ms-2{margin-left:.5rem}
+
+/* 颜色工具类 */
+.text-success{color:#198754!important}
+.text-warning{color:#ffc107!important}
+.text-danger{color:#dc3545!important}
+.text-info{color:#0dcaf0!important}
+.text-primary{color:#0d6efd!important}
+.text-secondary{color:#6c757d!important}
+.text-light{color:#f8f9fa!important}
+.text-dark{color:#212529!important}

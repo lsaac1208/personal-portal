@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+
+{% block title %}服务器错误 - 个人门户网站{% endblock %}
+{% block meta_description %}服务器遇到了一个错误，我们正在努力修复。请稍后重试或联系我们获取帮助。{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <!-- Error Illustration -->
+            <div class="error-illustration mb-5">
+                <div class="error-code display-1 fw-bold text-danger mb-3" style="font-size: 8rem;">
+                    500
+                </div>
+                <div class="error-icon mb-4">
+                    <i class="fas fa-exclamation-triangle fa-4x text-warning"></i>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message mb-5">
+                <h1 class="h2 mb-3">服务器内部错误</h1>
+                <p class="lead text-muted mb-4">
+                    抱歉，服务器遇到了一个意外错误，无法完成您的请求。
+                </p>
+                <p class="text-muted">
+                    我们的技术团队已经收到了错误报告，正在努力修复这个问题。
+                </p>
+            </div>
+            
+            <!-- Error Details (Only in Development) -->
+            {% if config.DEBUG and error_details %}
+            <div class="error-details mb-5">
+                <div class="alert alert-danger text-start">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-bug me-2"></i>错误详情 (开发模式)
+                    </h6>
+                    <hr>
+                    <pre class="mb-0"><code>{{ error_details }}</code></pre>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons mb-5">
+                <h5 class="mb-3">您可以尝试以下操作</h5>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        <i class="fas fa-redo me-2"></i>重新加载页面
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="history.back()">
+                        <i class="fas fa-arrow-left me-2"></i>返回上一页
+                    </button>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-2"></i>返回首页
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Alternative Navigation -->
+            <div class="alternative-nav mb-5">
+                <h5 class="mb-3">或者访问其他页面</h5>
+                <div class="row g-3">
+                    <div class="col-md-4 col-6">
+                        <a href="{{ url_for('content.all_content') }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-blog d-block mb-2 fa-2x"></i>
+                            技术文章
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <a href="{{ url_for('content.portfolio') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-briefcase d-block mb-2 fa-2x"></i>
+                            项目作品
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-12">
+                        <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-envelope d-block mb-2 fa-2x"></i>
+                            联系我们
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status Information -->
+            <div class="status-info mb-5">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title text-info">
+                                    <i class="fas fa-clock me-2"></i>自动恢复
+                                </h6>
+                                <p class="card-text small">
+                                    系统具有自动恢复能力，通常在几分钟内恢复正常。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title text-success">
+                                    <i class="fas fa-shield-alt me-2"></i>数据安全
+                                </h6>
+                                <p class="card-text small">
+                                    您的数据是安全的，这个错误不会影响数据完整性。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Support -->
+            <div class="contact-support">
+                <h5 class="mb-3">需要立即帮助？</h5>
+                <div class="alert alert-light" role="alert">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="mb-0">
+                                <strong>如果问题持续存在</strong>，请联系我们，我们将优先处理您的问题。
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <a href="mailto:your@email.com?subject=网站错误报告&body=错误时间：2025-09-10 12:54:00%0A错误页面：{{ request.url }}%0A用户代理：{{ request.headers.get('User-Agent', '') }}" 
+                               class="btn btn-danger btn-sm">
+                                <i class="fas fa-envelope me-1"></i>报告错误
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contact Methods -->
+                <div class="contact-methods mt-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="contact-item text-center">
+                                <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+                                <h6>邮件</h6>
+                                <small class="text-muted">your@email.com</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="contact-item text-center">
+                                <i class="fas fa-phone fa-2x text-success mb-2"></i>
+                                <h6>电话</h6>
+                                <small class="text-muted">+86 123 4567 8901</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="contact-item text-center">
+                                <i class="fab fa-weixin fa-2x text-success mb-2"></i>
+                                <h6>微信</h6>
+                                <small class="text-muted">your_wechat_id</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error ID -->
+            {% if error_id %}
+            <div class="error-id mt-5 pt-4 border-top">
+                <small class="text-muted">
+                    <i class="fas fa-hashtag me-1"></i>错误ID: <code>{{ error_id }}</code>
+                    <br>
+                    请在联系我们时提供此错误ID以便快速定位问题
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.error-illustration {
+    animation: pulse-error 3s ease-in-out infinite;
+}
+
+@keyframes pulse-error {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.error-code {
+    background: linear-gradient(135deg, var(--bs-danger), var(--bs-warning));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+}
+
+.action-buttons .btn,
+.alternative-nav .btn {
+    transition: all 0.3s ease;
+}
+
+.action-buttons .btn:hover,
+.alternative-nav .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.alternative-nav .btn {
+    padding: 1.5rem 1rem;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.contact-item {
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.contact-item:hover {
+    transform: scale(1.05);
+}
+
+.error-details pre {
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.875rem;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .error-code {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-bs-theme="dark"] .error-details pre {
+    background-color: #2d3748;
+    color: #e2e8f0;
+}
+
+/* Auto-refresh indicator */
+.refresh-countdown {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    font-size: 0.875rem;
+    z-index: 1000;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 4rem !important;
+    }
+    
+    .alternative-nav .btn {
+        padding: 1rem 0.5rem;
+    }
+    
+    .alternative-nav .btn i {
+        font-size: 1.5rem !important;
+    }
+    
+    .action-buttons .d-flex {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh functionality
+let refreshCountdown = 30;
+let refreshTimer;
+let countdownElement;
+
+function startAutoRefresh() {
+    // Create countdown element
+    countdownElement = document.createElement('div');
+    countdownElement.className = 'refresh-countdown';
+    countdownElement.innerHTML = `<i class="fas fa-sync-alt me-2"></i>将在 <span id="countdown">${refreshCountdown}</span> 秒后自动刷新`;
+    document.body.appendChild(countdownElement);
+    
+    // Show countdown
+    setTimeout(() => {
+        countdownElement.style.display = 'block';
+    }, 5000); // Show after 5 seconds
+    
+    // Start countdown
+    refreshTimer = setInterval(() => {
+        refreshCountdown--;
+        const countdownSpan = document.getElementById('countdown');
+        if (countdownSpan) {
+            countdownSpan.textContent = refreshCountdown;
+        }
+        
+        if (refreshCountdown <= 0) {
+            location.reload();
+        }
+    }, 1000);
+}
+
+// Stop auto-refresh on user interaction
+function stopAutoRefresh() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+        if (countdownElement) {
+            countdownElement.remove();
+        }
+    }
+}
+
+// Initialize error handling
+document.addEventListener('DOMContentLoaded', function() {
+    // Start auto-refresh unless in debug mode
+    {% if not config.DEBUG %}
+    setTimeout(startAutoRefresh, 10000); // Start after 10 seconds
+    {% endif %}
+    
+    // Stop auto-refresh on any user interaction
+    document.addEventListener('click', stopAutoRefresh, { once: true });
+    document.addEventListener('keydown', stopAutoRefresh, { once: true });
+    document.addEventListener('scroll', stopAutoRefresh, { once: true });
+    
+    // Track 500 error for analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'server_error', {
+            'error_type': '500',
+            'page_location': window.location.href,
+            'page_referrer': document.referrer,
+            'error_id': '{{ error_id or "unknown" }}'
+        });
+    }
+    
+    // Log error details for debugging
+    console.error('500 Server Error:', {
+        url: window.location.href,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString(),
+        errorId: '{{ error_id or "unknown" }}'
+    });
+    
+    // Check server status periodically
+    checkServerStatus();
+});
+
+// Enhanced reload with visual feedback
+document.querySelector('button[onclick="location.reload()"]').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Add loading state
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>重新加载中...';
+    this.disabled = true;
+    
+    // Reload after short delay
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+});
+
+// Server status checker
+async function checkServerStatus() {
+    try {
+        // Try to fetch a lightweight endpoint
+        const response = await fetch('/health-check', {
+            method: 'HEAD',
+            cache: 'no-cache'
+        });
+        
+        if (response.ok) {
+            // Server is back online
+            showServerStatusMessage('服务器已恢复正常', 'success');
+        }
+    } catch (error) {
+        // Server still down, check again in 30 seconds
+        setTimeout(checkServerStatus, 30000);
+    }
+}
+
+function showServerStatusMessage(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Add helpful keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Press 'R' to reload
+    if (e.key === 'r' || e.key === 'R') {
+        if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            const activeElement = document.activeElement;
+            if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                location.reload();
+            }
+        }
+    }
+    
+    // Press 'H' to go home
+    if (e.key === 'h' || e.key === 'H') {
+        if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            const activeElement = document.activeElement;
+            if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                window.location.href = "{{ url_for('main.index') }}";
+            }
+        }
+    }
+    
+    // Press 'B' to go back
+    if (e.key === 'b' || e.key === 'B') {
+        if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            const activeElement = document.activeElement;
+            if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                history.back();
+            }
+        }
+    }
+    
+    // Press Escape to stop auto-refresh
+    if (e.key === 'Escape') {
+        stopAutoRefresh();
+    }
+});
+
+// Add keyboard shortcut hints
+document.addEventListener('DOMContentLoaded', function() {
+    const errorId = document.querySelector('.error-id');
+    if (errorId) {
+        const keyboardHints = document.createElement('div');
+        keyboardHints.className = 'mt-3';
+        keyboardHints.innerHTML = `
+            <small class="text-muted">
+                <i class="fas fa-keyboard me-1"></i>快捷键：
+                <kbd>R</kbd> 刷新 |
+                <kbd>H</kbd> 首页 |
+                <kbd>B</kbd> 返回 |
+                <kbd>Esc</kbd> 停止自动刷新
+            </small>
+        `;
+        errorId.appendChild(keyboardHints);
+    }
+});
+
+// Retry mechanism with exponential backoff
+let retryCount = 0;
+const maxRetries = 3;
+
+function retryRequest() {
+    if (retryCount >= maxRetries) {
+        console.log('Max retries reached');
+        return;
+    }
+    
+    retryCount++;
+    const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+    
+    setTimeout(async () => {
+        try {
+            const response = await fetch(window.location.href, {
+                cache: 'no-cache'
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                retryRequest();
+            }
+        } catch (error) {
+            retryRequest();
+        }
+    }, delay);
+}
+
+// Automatically start retry mechanism after 1 minute
+{% if not config.DEBUG %}
+setTimeout(retryRequest, 60000);
+{% endif %}
+</script>
+{% endblock %}

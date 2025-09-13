@@ -1,0 +1,920 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} - 客户详情{% endblock %}
+{% block meta_description %}{{ customer.name }}的客户详细信息，包含联系方式、互动历史、商机跟踪等完整CRM资料。{% endblock %}
+
+{% block extra_css %}
+<style>
+.customer-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.info-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.info-card .card-header {
+    background-color: transparent;
+    border-bottom: 2px solid var(--bs-light);
+    font-weight: 600;
+}
+
+.lead-score-display {
+    text-align: center;
+    padding: 2rem;
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    margin: 0 auto 1rem;
+}
+
+.score-circle.high {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.score-circle.medium {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.score-circle.low {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.probability-bar {
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: var(--bs-light);
+    margin: 1rem 0;
+}
+
+.probability-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--bs-light);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 2rem;
+    margin-bottom: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    border: 2px solid white;
+    box-shadow: 0 0 0 3px var(--bs-light);
+}
+
+.timeline-item.interaction::before {
+    background: var(--bs-info);
+}
+
+.timeline-item.inquiry::before {
+    background: var(--bs-warning);
+}
+
+.timeline-item.opportunity::before {
+    background: var(--bs-success);
+}
+
+.contact-method {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--bs-light);
+    border-radius: 2rem;
+    margin: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.value-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.value-badge.high {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.value-badge.medium {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
+}
+
+.value-badge.low {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+}
+
+.stats-row {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.opportunity-card {
+    border-left: 4px solid;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.opportunity-card:hover {
+    transform: translateX(5px);
+}
+
+.opportunity-card.识别需求 { border-left-color: #ffc107; }
+.opportunity-card.方案设计 { border-left-color: #17a2b8; }
+.opportunity-card.商务谈判 { border-left-color: #fd7e14; }
+.opportunity-card.合同签署 { border-left-color: #007bff; }
+.opportunity-card.项目实施 { border-left-color: #28a745; }
+.opportunity-card.项目完成 { border-left-color: #198754; }
+.opportunity-card.已流失 { border-left-color: #dc3545; }
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .info-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .contact-method {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .stats-row {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+[data-bs-theme="dark"] .timeline::before {
+    background: var(--bs-gray-600);
+}
+
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 1rem;
+    }
+    
+    .timeline::before {
+        left: 10px;
+    }
+    
+    .timeline-item::before {
+        left: -1px;
+    }
+    
+    .lead-score-display {
+        padding: 1rem;
+    }
+    
+    .score-circle {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="customer-header">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-2">
+                        <h1 class="h3 mb-0 me-3">{{ customer.name }}</h1>
+                        {% if customer.customer_code %}
+                        <span class="badge bg-light text-dark">{{ customer.customer_code }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row g-3 mt-2">
+                        <div class="col-auto">
+                            <span class="contact-method">
+                                <i class="fas fa-envelope me-2"></i>{{ customer.email }}
+                            </span>
+                        </div>
+                        {% if customer.phone %}
+                        <div class="col-auto">
+                            <span class="contact-method">
+                                <i class="fas fa-phone me-2"></i>{{ customer.phone }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if customer.company %}
+                        <div class="col-auto">
+                            <span class="contact-method">
+                                <i class="fas fa-building me-2"></i>{{ customer.company }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if customer.title %}
+                        <div class="col-auto">
+                            <span class="contact-method">
+                                <i class="fas fa-user-tie me-2"></i>{{ customer.title }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('crm.customer_edit', id=customer.id) }}" class="btn btn-light">
+                        <i class="fas fa-edit me-2"></i>编辑
+                    </a>
+                    <a href="{{ url_for('crm.customer_list') }}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-2"></i>返回列表
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-lg-8">
+                    <!-- Basic Information -->
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user me-2"></i>基础信息
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <strong>客户类型：</strong>
+                                    <span class="badge bg-{{ 'success' if customer.customer_type == '签约客户' else 'warning' if customer.customer_type == '意向客户' else 'info' if customer.customer_type == '潜在客户' else 'secondary' }} ms-2">
+                                        {{ customer.customer_type }}
+                                    </span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>价值等级：</strong>
+                                    <span class="value-badge {{ customer.value_level.lower() }} ms-2">
+                                        {{ customer.value_level }}价值
+                                    </span>
+                                </div>
+                                {% if customer.industry %}
+                                <div class="col-md-6">
+                                    <strong>所属行业：</strong>{{ customer.industry }}
+                                </div>
+                                {% endif %}
+                                {% if customer.lead_source %}
+                                <div class="col-md-6">
+                                    <strong>来源渠道：</strong>{{ customer.lead_source }}
+                                </div>
+                                {% endif %}
+                                {% if customer.company_size %}
+                                <div class="col-md-6">
+                                    <strong>公司规模：</strong>{{ customer.company_size }}
+                                </div>
+                                {% endif %}
+                                {% if customer.company_website %}
+                                <div class="col-md-6">
+                                    <strong>公司网站：</strong>
+                                    <a href="{{ customer.company_website }}" target="_blank">{{ customer.company_website }}</a>
+                                </div>
+                                {% endif %}
+                                {% if customer.preferred_contact %}
+                                <div class="col-md-6">
+                                    <strong>偏好联系方式：</strong>{{ customer.preferred_contact }}
+                                </div>
+                                {% endif %}
+                                {% if customer.timezone %}
+                                <div class="col-md-6">
+                                    <strong>时区：</strong>{{ customer.timezone }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if customer.company_address %}
+                            <div class="mt-3">
+                                <strong>公司地址：</strong>
+                                <p class="mb-0">{{ customer.company_address }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if customer.notes %}
+                            <div class="mt-3">
+                                <strong>客户备注：</strong>
+                                <p class="mb-0">{{ customer.notes }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if customer.get_tags_list() %}
+                            <div class="mt-3">
+                                <strong>客户标签：</strong>
+                                <div class="mt-2">
+                                    {% for tag in customer.get_tags_list() %}
+                                    <span class="badge bg-light text-primary me-1 mb-1">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>客户统计
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="row text-center g-3">
+                                    <div class="col-md-3 col-6">
+                                        <div class="h4 mb-1 text-primary">{{ inquiries | length }}</div>
+                                        <small class="text-muted">咨询次数</small>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <div class="h4 mb-1 text-success">{{ opportunities | length }}</div>
+                                        <small class="text-muted">商机数量</small>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <div class="h4 mb-1 text-info">{{ interactions | length }}</div>
+                                        <small class="text-muted">互动记录</small>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <div class="h4 mb-1 text-warning">
+                                            {% if customer.days_since_last_contact() %}
+                                            {{ customer.days_since_last_contact() }}
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">天未联系</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                {% if customer.first_contact %}
+                                <div class="col-md-6">
+                                    <strong>首次接触：</strong>{{ customer.first_contact.strftime('%Y年%m月%d日') }}
+                                </div>
+                                {% endif %}
+                                {% if customer.last_contact %}
+                                <div class="col-md-6">
+                                    <strong>最后接触：</strong>{{ customer.last_contact.strftime('%Y年%m月%d日') }}
+                                </div>
+                                {% endif %}
+                                {% if customer.next_followup %}
+                                <div class="col-md-6 mt-2">
+                                    <strong>下次跟进：</strong>
+                                    <span class="{{ 'text-danger' if customer.needs_followup() else 'text-success' }}">
+                                        {{ customer.next_followup.strftime('%Y年%m月%d日 %H:%M') }}
+                                        {% if customer.needs_followup() %}
+                                        <i class="fas fa-exclamation-triangle text-danger ms-1"></i>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
+                                {% if customer.lifetime_value %}
+                                <div class="col-md-6 mt-2">
+                                    <strong>客户价值：</strong>¥{{ "{:,.2f}".format(customer.lifetime_value) }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Opportunities -->
+                    {% if opportunities %}
+                    <div class="info-card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-briefcase me-2"></i>商机管理
+                                </h5>
+                                <a href="{{ url_for('crm.opportunity_edit') }}?customer_id={{ customer.id }}" 
+                                   class="btn btn-sm btn-success">
+                                    <i class="fas fa-plus me-1"></i>创建商机
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% for opportunity in opportunities %}
+                            <div class="opportunity-card {{ opportunity.stage }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">
+                                            <a href="{{ url_for('crm.opportunity_detail', id=opportunity.id) }}" 
+                                               class="text-decoration-none">
+                                                {{ opportunity.title }}
+                                            </a>
+                                        </h6>
+                                        <span class="badge" style="background-color: {{ opportunity.get_stage_color() }};">
+                                            {{ opportunity.stage }}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if opportunity.description %}
+                                    <p class="text-muted small mb-2">{{ opportunity.description | truncate(100) }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="row g-2 small">
+                                        {% if opportunity.value %}
+                                        <div class="col-md-4">
+                                            <i class="fas fa-dollar-sign text-success me-1"></i>
+                                            ¥{{ "{:,.2f}".format(opportunity.value) }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="col-md-4">
+                                            <i class="fas fa-percentage text-info me-1"></i>
+                                            {{ (opportunity.probability * 100) | round(0) }}%概率
+                                        </div>
+                                        {% if opportunity.expected_close_date %}
+                                        <div class="col-md-4">
+                                            <i class="fas fa-calendar text-warning me-1"></i>
+                                            {{ opportunity.expected_close_date.strftime('%m月%d日') }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Activity Timeline -->
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>活动时间线
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline">
+                                <!-- Recent Interactions -->
+                                {% for interaction in interactions %}
+                                <div class="timeline-item interaction">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-comment text-info me-2"></i>
+                                            {{ interaction.interaction_type }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ interaction.created_at.strftime('%m月%d日 %H:%M') }}
+                                        </small>
+                                    </div>
+                                    <p class="mb-1">{{ interaction.content }}</p>
+                                    {% if interaction.outcome %}
+                                    <p class="text-muted small mb-1">
+                                        <strong>结果：</strong>{{ interaction.outcome }}
+                                    </p>
+                                    {% endif %}
+                                    {% if interaction.duration_minutes %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ interaction.get_duration_text() }}
+                                    </small>
+                                    {% endif %}
+                                    {% if interaction.staff_name %}
+                                    <small class="text-muted ms-3">
+                                        <i class="fas fa-user me-1"></i>{{ interaction.staff_name }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+
+                                <!-- Recent Inquiries -->
+                                {% for inquiry in inquiries %}
+                                <div class="timeline-item inquiry">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-question-circle text-warning me-2"></i>
+                                            项目咨询
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ inquiry.created_at.strftime('%m月%d日 %H:%M') }}
+                                        </small>
+                                    </div>
+                                    <p class="mb-1">
+                                        <strong>{{ inquiry.title }}</strong>
+                                        <span class="badge bg-{{ 'success' if inquiry.project_type == '项目开发' else 'info' }} ms-2">
+                                            {{ inquiry.project_type }}
+                                        </span>
+                                    </p>
+                                    <p class="text-muted small mb-1">{{ inquiry.description | truncate(100) }}</p>
+                                    <div class="d-flex gap-3 small text-muted">
+                                        <span>
+                                            <i class="fas fa-tag me-1"></i>{{ inquiry.status }}
+                                        </span>
+                                        {% if inquiry.budget_range %}
+                                        <span>
+                                            <i class="fas fa-dollar-sign me-1"></i>{{ inquiry.budget_range }}
+                                        </span>
+                                        {% endif %}
+                                        {% if inquiry.timeline %}
+                                        <span>
+                                            <i class="fas fa-calendar me-1"></i>{{ inquiry.timeline }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                                {% if not interactions and not inquiries %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-clock fa-2x mb-3"></i>
+                                    <p>暂无活动记录</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="col-lg-4">
+                    <!-- Lead Score -->
+                    <div class="info-card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-line me-2"></i>线索评分
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="updateLeadScore()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="lead-score-display">
+                                <div class="score-circle {{ 'high' if customer.lead_score >= 70 else 'medium' if customer.lead_score >= 40 else 'low' }}">
+                                    {{ customer.lead_score }}
+                                </div>
+                                <h6 class="mb-3">
+                                    {% if customer.lead_score >= 70 %}
+                                    高质量线索
+                                    {% elif customer.lead_score >= 40 %}
+                                    中等质量线索
+                                    {% else %}
+                                    待培育线索
+                                    {% endif %}
+                                </h6>
+                                
+                                {% if customer.conversion_probability %}
+                                <div class="mb-3">
+                                    <strong>转化概率</strong>
+                                    <div class="probability-bar">
+                                        <div class="probability-fill" 
+                                             style="width: {{ (customer.conversion_probability * 100) | round(0) }}%"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        {{ (customer.conversion_probability * 100) | round(0) }}%
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    最后更新：{{ customer.updated_at.strftime('%m月%d日') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bolt me-2"></i>快速操作
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="addInteraction()">
+                                    <i class="fas fa-comment me-2"></i>添加互动记录
+                                </button>
+                                
+                                <button class="btn btn-success" onclick="scheduleFollowup()">
+                                    <i class="fas fa-calendar-plus me-2"></i>安排跟进
+                                </button>
+                                
+                                <a href="{{ url_for('crm.opportunity_edit') }}?customer_id={{ customer.id }}" 
+                                   class="btn btn-info">
+                                    <i class="fas fa-briefcase me-2"></i>创建商机
+                                </a>
+                                
+                                <a href="mailto:{{ customer.email }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-envelope me-2"></i>发送邮件
+                                </a>
+                                
+                                {% if customer.phone %}
+                                <a href="tel:{{ customer.phone }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-phone me-2"></i>拨打电话
+                                </a>
+                                {% endif %}
+                                
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-info dropdown-toggle w-100" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog me-2"></i>更多操作
+                                    </button>
+                                    <ul class="dropdown-menu w-100">
+                                        <li><a class="dropdown-item" href="#" onclick="exportCustomerData()">
+                                            <i class="fas fa-download me-2"></i>导出客户数据
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="mergeCustomer()">
+                                            <i class="fas fa-compress-alt me-2"></i>合并客户
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-muted" href="#" onclick="archiveCustomer()">
+                                            <i class="fas fa-archive me-2"></i>归档客户
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Follow-up Reminder -->
+                    {% if customer.next_followup %}
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bell me-2"></i>跟进提醒
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-calendar-alt fa-2x {{ 'text-danger' if customer.needs_followup() else 'text-success' }}"></i>
+                                </div>
+                                <h6 class="{{ 'text-danger' if customer.needs_followup() else 'text-success' }}">
+                                    {{ customer.next_followup.strftime('%Y年%m月%d日') }}
+                                </h6>
+                                <p class="mb-0">
+                                    {% if customer.needs_followup() %}
+                                    <span class="badge bg-danger">需要跟进</span>
+                                    {% else %}
+                                    <span class="badge bg-success">按时跟进</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include modals from customer_list.html -->
+<div class="modal fade" id="interactionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加客户互动</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="interactionForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">互动类型</label>
+                        <select class="form-select" name="interaction_type" required>
+                            <option value="电话">电话沟通</option>
+                            <option value="邮件">邮件联系</option>
+                            <option value="会议">会议讨论</option>
+                            <option value="访问">现场访问</option>
+                            <option value="微信">微信沟通</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">互动内容</label>
+                        <textarea class="form-control" name="content" rows="4" required
+                                  placeholder="详细描述本次互动的内容..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">互动结果</label>
+                        <textarea class="form-control" name="outcome" rows="2"
+                                  placeholder="互动的结果和后续行动计划..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">持续时长(分钟)</label>
+                        <input type="number" class="form-control" name="duration" min="1" max="480">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存互动记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="followupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">安排客户跟进</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="followupForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">跟进时间</label>
+                        <select class="form-select" name="days_ahead" required>
+                            <option value="1">明天</option>
+                            <option value="3">3天后</option>
+                            <option value="7" selected>1周后</option>
+                            <option value="14">2周后</option>
+                            <option value="30">1个月后</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">跟进备注</label>
+                        <textarea class="form-control" name="note" rows="3"
+                                  placeholder="跟进的具体事项和目标..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">安排跟进</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add interaction
+function addInteraction() {
+    const modal = new bootstrap.Modal(document.getElementById('interactionModal'));
+    modal.show();
+}
+
+// Schedule followup
+function scheduleFollowup() {
+    const modal = new bootstrap.Modal(document.getElementById('followupModal'));
+    modal.show();
+}
+
+// Handle interaction form submission
+document.getElementById('interactionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    fetch(`/crm/customer/{{ customer.id }}/interaction`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('interactionModal')).hide();
+            location.reload();
+        } else {
+            alert('操作失败：' + (data.message || '未知错误'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失败，请稍后重试');
+    });
+});
+
+// Handle followup form submission
+document.getElementById('followupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    fetch(`/crm/customer/{{ customer.id }}/followup`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('followupModal')).hide();
+            location.reload();
+        } else {
+            alert('操作失败：' + (data.message || '未知错误'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失败，请稍后重试');
+    });
+});
+
+// Update lead score
+function updateLeadScore() {
+    if (confirm('确定要重新计算客户线索评分吗？')) {
+        fetch(`/crm/api/customer/{{ customer.id }}/lead_score`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('更新失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('更新失败，请稍后重试');
+        });
+    }
+}
+
+// Export customer data
+function exportCustomerData() {
+    window.open(`/crm/customer/{{ customer.id }}/export`, '_blank');
+}
+
+// Merge customer
+function mergeCustomer() {
+    // This would open a modal to select another customer to merge with
+    alert('客户合并功能正在开发中');
+}
+
+// Archive customer
+function archiveCustomer() {
+    if (confirm('确定要归档这个客户吗？归档后客户将不会在正常列表中显示。')) {
+        fetch(`/crm/customer/{{ customer.id }}/archive`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('客户已归档');
+                window.location.href = '{{ url_for("crm.customer_list") }}';
+            } else {
+                alert('归档失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('归档失败，请稍后重试');
+        });
+    }
+}
+</script>
+{% endblock %}

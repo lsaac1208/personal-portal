@@ -186,11 +186,11 @@ class EmailTemplates:
             </div>
             
             <table class="info-table">
-                <tr><th>联系人</th><td>{{ inquiry.name }}</td></tr>
-                <tr><th>邮箱</th><td>{{ inquiry.email }}</td></tr>
-                {% if inquiry.phone %}<tr><th>电话</th><td>{{ inquiry.phone }}</td></tr>{% endif %}
-                {% if inquiry.company %}<tr><th>公司</th><td>{{ inquiry.company }}</td></tr>{% endif %}
-                {% if inquiry.position %}<tr><th>职位</th><td>{{ inquiry.position }}</td></tr>{% endif %}
+                <tr><th>联系人</th><td>{{ inquiry.client_name }}</td></tr>
+                <tr><th>邮箱</th><td>{{ inquiry.client_email }}</td></tr>
+                {% if inquiry.client_phone %}<tr><th>电话</th><td>{{ inquiry.client_phone }}</td></tr>{% endif %}
+                {% if inquiry.client_company %}<tr><th>公司</th><td>{{ inquiry.client_company }}</td></tr>{% endif %}
+                {% if inquiry.client_position %}<tr><th>职位</th><td>{{ inquiry.client_position }}</td></tr>{% endif %}
                 <tr><th>预算范围</th><td>{{ inquiry.budget_range or '未指定' }}</td></tr>
                 <tr><th>期望时间</th><td>{{ inquiry.timeline or '未指定' }}</td></tr>
                 <tr><th>联系偏好</th><td>{{ inquiry.contact_preference }}</td></tr>
@@ -202,9 +202,9 @@ class EmailTemplates:
                 {{ inquiry.description | nl2br | safe }}
             </div>
             
-            {% if inquiry.preferred_tech %}
+            {% if inquiry.tech_requirements %}
             <h3>🔧 技术偏好：</h3>
-            <p>{{ inquiry.preferred_tech }}</p>
+            <p>{{ inquiry.tech_requirements }}</p>
             {% endif %}
             
             {% if inquiry.additional_info %}
@@ -248,7 +248,7 @@ class EmailTemplates:
         </div>
         
         <div class="content">
-            <p>尊敬的 <strong>{{ inquiry.name }}</strong>，</p>
+            <p>尊敬的 <strong>{{ inquiry.client_name }}</strong>，</p>
             
             <p>我们已收到您关于"<strong>{{ inquiry.subject }}</strong>"的咨询，感谢您的信任！</p>
             
@@ -318,7 +318,7 @@ class EmailTemplates:
         </div>
         
         <div class="content">
-            <p>尊敬的 <strong>{{ inquiry.name }}</strong>，</p>
+            <p>尊敬的 <strong>{{ inquiry.client_name }}</strong>，</p>
             
             <p>感谢您对我们项目的咨询，以下是针对您需求的详细回复：</p>
             
@@ -420,7 +420,7 @@ def send_inquiry_notification(inquiry):
         
         # 发送邮件
         subject = f"🆕 新的项目咨询：{inquiry.subject}"
-        text_body = f"收到来自 {inquiry.name} ({inquiry.email}) 的项目咨询\n\n咨询类型：{inquiry.inquiry_type}\n主题：{inquiry.subject}\n\n详细内容：\n{inquiry.description}"
+        text_body = f"收到来自 {inquiry.client_name} ({inquiry.client_email}) 的项目咨询\n\n咨询类型：{inquiry.inquiry_type}\n主题：{inquiry.subject}\n\n详细内容：\n{inquiry.description}"
         
         return sender.send_email(
             to_email=admin_email,
@@ -445,10 +445,10 @@ def send_inquiry_confirmation(inquiry):
         
         # 发送邮件
         subject = f"✅ 咨询确认：{inquiry.subject}"
-        text_body = f"尊敬的 {inquiry.name}，\n\n我们已收到您关于"{inquiry.subject}"的咨询，感谢您的信任！\n\n我们将在24-48小时内回复您的咨询。\n\n此致\n敬礼！"
+        text_body = f"尊敬的 {inquiry.client_name}，\n\n我们已收到您关于\"{inquiry.subject}\"的咨询，感谢您的信任！\n\n我们将在24-48小时内回复您的咨询。\n\n此致\n敬礼！"
         
         return sender.send_email(
-            to_email=inquiry.email,
+            to_email=inquiry.client_email,
             subject=subject,
             body=text_body,
             html_body=html_body
@@ -470,10 +470,10 @@ def send_inquiry_response(inquiry, response):
         
         # 发送邮件
         subject = f"📧 Re: {inquiry.subject}"
-        text_body = f"尊敬的 {inquiry.name}，\n\n关于您的咨询"{inquiry.subject}"，我们的回复如下：\n\n{response.response}\n\n如有问题请随时联系。\n\n此致\n敬礼！"
+        text_body = f"尊敬的 {inquiry.client_name}，\n\n关于您的咨询\"{inquiry.subject}\"，我们的回复如下：\n\n{response.response}\n\n如有问题请随时联系。\n\n此致\n敬礼！"
         
         return sender.send_email(
-            to_email=inquiry.email,
+            to_email=inquiry.client_email,
             subject=subject,
             body=text_body,
             html_body=html_body

@@ -1,0 +1,1085 @@
+{% extends "base.html" %}
+
+{% block title %}创建内容 - 管理后台{% endblock %}
+{% block meta_description %}创建新的文章内容，支持 Markdown 编辑、实时预览、SEO 优化等功能。{% endblock %}
+
+{% block extra_css %}
+<!-- EasyMDE CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
+<!-- Prism CSS for syntax highlighting -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+
+<style>
+.content-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    padding: 2rem;
+    margin: -1rem -1rem 1rem -1rem;
+}
+
+.form-section {
+    background-color: var(--bs-light);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-section h6 {
+    color: var(--bs-primary);
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.editor-container {
+    position: relative;
+}
+
+.editor-toolbar {
+    background-color: var(--bs-white);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.editor-btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    background-color: var(--bs-white);
+    color: var(--bs-dark);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.editor-btn:hover {
+    background-color: var(--bs-primary);
+    color: var(--bs-white);
+}
+
+.editor-btn.active {
+    background-color: var(--bs-primary);
+    color: var(--bs-white);
+}
+
+.preview-container {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    background-color: var(--bs-white);
+}
+
+.tag-input-container {
+    position: relative;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--bs-white);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+}
+
+.tag-suggestion {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--bs-light);
+    transition: background-color 0.2s;
+}
+
+.tag-suggestion:hover {
+    background-color: var(--bs-light);
+}
+
+.tag-suggestion:last-child {
+    border-bottom: none;
+}
+
+.selected-tags .badge {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.image-upload-area {
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-upload-area:hover,
+.image-upload-area.drag-over {
+    border-color: var(--bs-primary);
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.seo-score {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.seo-score.excellent {
+    background-color: #d1e7dd;
+    color: #0a3622;
+}
+
+.seo-score.good {
+    background-color: #d1ecf1;
+    color: #055160;
+}
+
+.seo-score.needs-improvement {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+.seo-score.poor {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.word-count {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--bs-dark);
+    color: var(--bs-white);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.auto-save-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    z-index: 1000;
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.auto-save-indicator.saving {
+    background-color: var(--bs-warning);
+    color: var(--bs-dark);
+}
+
+.auto-save-indicator.saved {
+    background-color: var(--bs-success);
+    color: var(--bs-white);
+}
+
+.auto-save-indicator.error {
+    background-color: var(--bs-danger);
+    color: var(--bs-white);
+}
+
+/* EasyMDE customization */
+.EasyMDEContainer .editor-toolbar {
+    border-color: var(--bs-border-color);
+    background-color: var(--bs-light);
+}
+
+.EasyMDEContainer .CodeMirror {
+    border-color: var(--bs-border-color);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.EasyMDEContainer .editor-preview {
+    background-color: var(--bs-white);
+    font-family: var(--bs-font-sans-serif);
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .form-section {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .editor-btn {
+    background-color: var(--bs-gray-700);
+    color: var(--bs-white);
+    border-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .preview-container,
+[data-bs-theme="dark"] .tag-suggestions {
+    background-color: var(--bs-gray-800);
+    border-color: var(--bs-gray-600);
+    color: var(--bs-white);
+}
+
+[data-bs-theme="dark"] .image-upload-area {
+    border-color: var(--bs-gray-600);
+    color: var(--bs-white);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .editor-toolbar {
+    background-color: var(--bs-gray-700);
+    border-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .CodeMirror {
+    background-color: var(--bs-gray-800);
+    color: var(--bs-white);
+    border-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .editor-preview {
+    background-color: var(--bs-gray-800);
+    color: var(--bs-white);
+}
+
+@media (max-width: 768px) {
+    .content-header {
+        padding: 1.5rem 1rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .editor-toolbar {
+        justify-content: center;
+    }
+    
+    .word-count,
+    .auto-save-indicator {
+        position: static;
+        margin: 1rem 0;
+        display: inline-block;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <form id="contentForm" method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        
+        <div class="card">
+            <div class="content-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-2">创建新内容</h1>
+                        <p class="mb-0 opacity-90">编写和发布您的文章、技术分享或创意作品</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-light" id="previewBtn">
+                            <i class="fas fa-eye me-2"></i>预览
+                        </button>
+                        <button type="submit" name="action" value="draft" class="btn btn-light">
+                            <i class="fas fa-save me-2"></i>保存草稿
+                        </button>
+                        <button type="submit" name="action" value="publish" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>发布
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Auto-save indicator -->
+                <div class="auto-save-indicator" id="autoSaveIndicator">
+                    <i class="fas fa-spinner fa-spin me-2"></i>自动保存中...
+                </div>
+
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-info-circle me-2"></i>基本信息</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="title" class="form-label">
+                                <i class="fas fa-heading me-1"></i>标题 *
+                            </label>
+                            {{ form.title(class="form-control", id="title", placeholder="输入文章标题...", required=true) }}
+                            <div class="form-text">建议标题长度 10-60 个字符，包含主要关键词</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="category" class="form-label">
+                                <i class="fas fa-folder me-1"></i>分类 *
+                            </label>
+                            {{ form.category(class="form-select", id="category", required=true) }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="summary" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>摘要
+                        </label>
+                        {{ form.summary(class="form-control", id="summary", rows="3", placeholder="文章摘要，用于搜索结果和社交分享...") }}
+                        <div class="form-text">建议摘要长度 50-160 个字符，简明扼要地描述文章内容</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">
+                                <i class="fas fa-flag me-1"></i>状态
+                            </label>
+                            {{ form.status(class="form-select", id="status") }}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                {{ form.is_featured(class="form-check-input", id="is_featured") }}
+                                <label class="form-check-label" for="is_featured">
+                                    <i class="fas fa-star text-warning me-1"></i>设为精选内容
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Editor Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-edit me-2"></i>内容编辑</h6>
+                    
+                    <!-- Editor Toolbar -->
+                    <div class="editor-toolbar">
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('**', '**', '粗体文本')" title="粗体">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('*', '*', '斜体文本')" title="斜体">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('`', '`', '代码')" title="行内代码">
+                            <i class="fas fa-code"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('```\n', '\n```', 'javascript\n// 代码块')" title="代码块">
+                            <i class="fas fa-terminal"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('[', '](url)', '链接文本')" title="链接">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('![', '](image-url)', 'alt文本')" title="图片">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('\n## ', '', '标题')" title="标题">
+                            <i class="fas fa-heading"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('\n- ', '', '列表项')" title="列表">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertMarkdown('\n> ', '', '引用文本')" title="引用">
+                            <i class="fas fa-quote-right"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="insertTable()" title="表格">
+                            <i class="fas fa-table"></i>
+                        </button>
+                        <button type="button" class="editor-btn" id="togglePreview" title="切换预览">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="editor-btn" onclick="toggleFullscreen()" title="全屏">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+
+                    <div class="editor-container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.content(class="form-control", id="contentEditor", rows="20", placeholder="在此处编写您的文章内容...\n\n支持 Markdown 语法：\n# 标题\n**粗体** *斜体*\n`代码` \n[链接](url)\n![图片](url)\n\n开始您的创作吧！") }}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="preview-container" id="previewContainer">
+                                    <div class="text-muted text-center py-5">
+                                        <i class="fas fa-eye fa-2x mb-3"></i>
+                                        <p>实时预览将在这里显示</p>
+                                        <small>开始输入内容以查看预览效果</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Upload Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-image me-2"></i>特色图片</h6>
+                    
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <input type="file" id="featuredImage" name="featured_image" accept="image/*" style="display: none;">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">点击或拖拽上传特色图片</h6>
+                        <p class="text-muted mb-0">支持 JPG, PNG, WebP 格式，最大 5MB</p>
+                        <div id="imagePreview"></div>
+                    </div>
+                </div>
+
+                <!-- Tags Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-tags me-2"></i>标签和分类</h6>
+                    
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">标签</label>
+                        <div class="tag-input-container">
+                            <input type="text" class="form-control" id="tagInput" placeholder="输入标签，按回车添加...">
+                            <div class="tag-suggestions" id="tagSuggestions"></div>
+                        </div>
+                        <input type="hidden" name="tags" id="tagsHidden">
+                        <div class="form-text">输入相关标签，有助于读者发现您的内容</div>
+                        <div class="selected-tags mt-2" id="selectedTags"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="reading_time" class="form-label">预计阅读时间</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="reading_time" name="reading_time" min="1" max="60">
+                                <span class="input-group-text">分钟</span>
+                            </div>
+                            <div class="form-text">系统将自动计算，也可手动调整</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="difficulty" class="form-label">难度等级</label>
+                            <select class="form-select" id="difficulty" name="difficulty">
+                                <option value="">选择难度等级</option>
+                                <option value="入门">入门</option>
+                                <option value="初级">初级</option>
+                                <option value="中级">中级</option>
+                                <option value="高级">高级</option>
+                                <option value="专家">专家</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO Optimization Section -->
+                <div class="form-section">
+                    <h6><i class="fas fa-search me-2"></i>SEO 优化</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="meta_title" class="form-label">SEO 标题</label>
+                            {{ form.meta_title(class="form-control", id="meta_title", placeholder="SEO 标题（留空将使用文章标题）") }}
+                            <div class="form-text">建议长度 50-60 个字符 <span id="titleLength">0</span>/60</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">SEO 评分</label>
+                            <div class="seo-score needs-improvement" id="seoScore">
+                                <i class="fas fa-exclamation-triangle me-1"></i>需要优化
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meta_description" class="form-label">SEO 描述</label>
+                        {{ form.meta_description(class="form-control", id="meta_description", rows="3", placeholder="SEO 描述（留空将使用文章摘要）") }}
+                        <div class="form-text">建议长度 120-160 个字符 <span id="descLength">0</span>/160</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">URL 别名</label>
+                        <div class="input-group">
+                            <span class="input-group-text">/content/</span>
+                            {{ form.slug(class="form-control", id="slug", placeholder="url-friendly-name") }}
+                        </div>
+                        <div class="form-text">URL 友好的别名，留空将自动生成</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="indexable" name="indexable" checked>
+                                <label class="form-check-label" for="indexable">
+                                    允许搜索引擎索引
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sitemap" name="sitemap" checked>
+                                <label class="form-check-label" for="sitemap">
+                                    包含在站点地图中
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publishing Options -->
+                <div class="form-section">
+                    <h6><i class="fas fa-calendar me-2"></i>发布选项</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="publish_date" class="form-label">发布时间</label>
+                            <input type="datetime-local" class="form-control" id="publish_date" name="publish_date">
+                            <div class="form-text">留空表示立即发布</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="author" class="form-label">作者</label>
+                            <input type="text" class="form-control" id="author" name="author" value="{{ current_user.name if current_user else '管理员' }}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{{ url_for('admin.content_manage') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回列表
+                        </a>
+                        <button type="button" class="btn btn-outline-info" id="saveTemplateBtn">
+                            <i class="fas fa-bookmark me-2"></i>保存为模板
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <button type="submit" name="action" value="draft" class="btn btn-outline-primary">
+                            <i class="fas fa-save me-2"></i>保存草稿
+                        </button>
+                        <button type="submit" name="action" value="preview" class="btn btn-info">
+                            <i class="fas fa-eye me-2"></i>预览文章
+                        </button>
+                        <button type="submit" name="action" value="publish" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>发布文章
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Word Count Display -->
+        <div class="word-count" id="wordCount">
+            字数: 0 | 字符: 0
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- EasyMDE JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<!-- Prism JavaScript for syntax highlighting -->
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<!-- Marked for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+
+<script>
+let isPreviewMode = false;
+let autoSaveTimer;
+let tags = [];
+let wordCountTimer;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEditor();
+    initializeImageUpload();
+    initializeTagSystem();
+    initializeAutoSave();
+    initializeSEOOptimization();
+    initializeFormValidation();
+});
+
+// Initialize Markdown Editor
+function initializeEditor() {
+    const contentEditor = document.getElementById('contentEditor');
+    const previewContainer = document.getElementById('previewContainer');
+    
+    // Configure marked for better rendering
+    marked.setOptions({
+        highlight: function(code, lang) {
+            if (Prism.languages[lang]) {
+                return Prism.highlight(code, Prism.languages[lang], lang);
+            }
+            return code;
+        },
+        breaks: true,
+        gfm: true
+    });
+    
+    // Real-time preview
+    contentEditor.addEventListener('input', function() {
+        updatePreview();
+        updateWordCount();
+        scheduleAutoSave();
+        calculateReadingTime();
+        updateSEOScore();
+    });
+    
+    // Initial preview
+    updatePreview();
+}
+
+// Update markdown preview
+function updatePreview() {
+    const content = document.getElementById('contentEditor').value;
+    const previewContainer = document.getElementById('previewContainer');
+    
+    if (content.trim()) {
+        const html = marked.parse(content);
+        previewContainer.innerHTML = html;
+        // Re-highlight code blocks
+        Prism.highlightAllUnder(previewContainer);
+    } else {
+        previewContainer.innerHTML = `
+            <div class="text-muted text-center py-5">
+                <i class="fas fa-eye fa-2x mb-3"></i>
+                <p>实时预览将在这里显示</p>
+                <small>开始输入内容以查看预览效果</small>
+            </div>
+        `;
+    }
+}
+
+// Update word count
+function updateWordCount() {
+    const content = document.getElementById('contentEditor').value;
+    const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+    const charCount = content.length;
+    
+    document.getElementById('wordCount').textContent = `字数: ${wordCount} | 字符: ${charCount}`;
+}
+
+// Calculate reading time
+function calculateReadingTime() {
+    const content = document.getElementById('contentEditor').value;
+    const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200)); // 200 words per minute
+    
+    document.getElementById('reading_time').value = readingTime;
+}
+
+// Markdown insertion helper
+function insertMarkdown(prefix, suffix, placeholder) {
+    const editor = document.getElementById('contentEditor');
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const selectedText = editor.value.substring(start, end);
+    const insertText = selectedText || placeholder;
+    const newText = prefix + insertText + suffix;
+    
+    editor.value = editor.value.substring(0, start) + newText + editor.value.substring(end);
+    
+    // Set cursor position
+    const newCursorPos = start + prefix.length + insertText.length;
+    editor.setSelectionRange(newCursorPos, newCursorPos);
+    editor.focus();
+    
+    updatePreview();
+    updateWordCount();
+}
+
+// Insert table
+function insertTable() {
+    const table = '\n| 列1 | 列2 | 列3 |\n|-----|-----|-----|\n| 内容 | 内容 | 内容 |\n| 内容 | 内容 | 内容 |\n';
+    insertMarkdown('', '', table);
+}
+
+// Toggle fullscreen
+function toggleFullscreen() {
+    const container = document.querySelector('.editor-container');
+    if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// Initialize image upload
+function initializeImageUpload() {
+    const uploadArea = document.getElementById('imageUploadArea');
+    const fileInput = document.getElementById('featuredImage');
+    const previewDiv = document.getElementById('imagePreview');
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', handleImageUpload);
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            fileInput.files = files;
+            handleImageUpload();
+        }
+    });
+    
+    function handleImageUpload() {
+        const file = fileInput.files[0];
+        if (!file) return;
+        
+        // Validate file
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件');
+            return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            alert('图片大小不能超过 5MB');
+            return;
+        }
+        
+        // Preview image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewDiv.innerHTML = `
+                <img src="${e.target.result}" class="image-preview" alt="预览">
+                <div class="mt-2">
+                    <small class="text-muted">${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Initialize tag system
+function initializeTagSystem() {
+    const tagInput = document.getElementById('tagInput');
+    const tagSuggestions = document.getElementById('tagSuggestions');
+    const selectedTagsContainer = document.getElementById('selectedTags');
+    const tagsHidden = document.getElementById('tagsHidden');
+    
+    // Common tag suggestions
+    const commonTags = [
+        'JavaScript', 'Python', 'React', 'Vue.js', 'Node.js', 'HTML', 'CSS',
+        'TypeScript', 'PHP', 'Java', 'C++', 'Go', 'Rust', 'Swift',
+        '前端开发', '后端开发', '全栈开发', '移动开发', 'Web开发',
+        '数据库', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis',
+        '机器学习', '人工智能', '数据科学', '算法', '数据结构',
+        '设计模式', '系统架构', '微服务', 'DevOps', 'Docker',
+        '性能优化', '安全', 'SEO', '用户体验', '响应式设计'
+    ];
+    
+    tagInput.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        if (value.length > 0) {
+            const matches = commonTags.filter(tag => 
+                tag.toLowerCase().includes(value) && !tags.includes(tag)
+            );
+            showTagSuggestions(matches);
+        } else {
+            hideTagSuggestions();
+        }
+    });
+    
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(this.value.trim());
+            this.value = '';
+            hideTagSuggestions();
+        }
+    });
+    
+    function showTagSuggestions(suggestions) {
+        if (suggestions.length === 0) {
+            hideTagSuggestions();
+            return;
+        }
+        
+        tagSuggestions.innerHTML = suggestions.map(tag => 
+            `<div class="tag-suggestion" onclick="selectTag('${tag}')">${tag}</div>`
+        ).join('');
+        tagSuggestions.style.display = 'block';
+    }
+    
+    function hideTagSuggestions() {
+        tagSuggestions.style.display = 'none';
+    }
+    
+    window.selectTag = function(tag) {
+        addTag(tag);
+        tagInput.value = '';
+        hideTagSuggestions();
+    };
+    
+    function addTag(tag) {
+        if (!tag || tags.includes(tag)) return;
+        
+        tags.push(tag);
+        updateTagsDisplay();
+        updateTagsHidden();
+    }
+    
+    window.removeTag = function(tag) {
+        tags = tags.filter(t => t !== tag);
+        updateTagsDisplay();
+        updateTagsHidden();
+    };
+    
+    function updateTagsDisplay() {
+        selectedTagsContainer.innerHTML = tags.map(tag => 
+            `<span class="badge bg-primary" onclick="removeTag('${tag}')">
+                ${tag} <i class="fas fa-times ms-1"></i>
+            </span>`
+        ).join('');
+    }
+    
+    function updateTagsHidden() {
+        tagsHidden.value = tags.join(',');
+    }
+}
+
+// Initialize auto-save
+function initializeAutoSave() {
+    const form = document.getElementById('contentForm');
+    
+    function scheduleAutoSave() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(autoSave, 30000); // Auto-save every 30 seconds
+    }
+    
+    function autoSave() {
+        const indicator = document.getElementById('autoSaveIndicator');
+        indicator.className = 'auto-save-indicator saving';
+        indicator.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>自动保存中...';
+        indicator.style.display = 'block';
+        
+        const formData = new FormData(form);
+        formData.set('action', 'auto_save');
+        
+        fetch('/admin/content/auto-save', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                indicator.className = 'auto-save-indicator saved';
+                indicator.innerHTML = '<i class="fas fa-check me-2"></i>已自动保存';
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 2000);
+            } else {
+                throw new Error(data.message || '保存失败');
+            }
+        })
+        .catch(error => {
+            indicator.className = 'auto-save-indicator error';
+            indicator.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>保存失败';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        });
+    }
+    
+    // Schedule auto-save on form changes
+    window.scheduleAutoSave = scheduleAutoSave;
+}
+
+// Initialize SEO optimization
+function initializeSEOOptimization() {
+    const titleInput = document.getElementById('title');
+    const metaTitleInput = document.getElementById('meta_title');
+    const summaryInput = document.getElementById('summary');
+    const metaDescInput = document.getElementById('meta_description');
+    const slugInput = document.getElementById('slug');
+    
+    // Auto-generate slug from title
+    titleInput.addEventListener('input', function() {
+        if (!slugInput.value) {
+            const slug = generateSlug(this.value);
+            slugInput.value = slug;
+        }
+        updateSEOScore();
+    });
+    
+    // Update character counts
+    metaTitleInput.addEventListener('input', function() {
+        document.getElementById('titleLength').textContent = this.value.length;
+        updateSEOScore();
+    });
+    
+    metaDescInput.addEventListener('input', function() {
+        document.getElementById('descLength').textContent = this.value.length;
+        updateSEOScore();
+    });
+    
+    function generateSlug(title) {
+        return title.toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/[\s_-]+/g, '-') // Replace spaces with hyphens
+            .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    }
+    
+    function updateSEOScore() {
+        const title = titleInput.value;
+        const metaTitle = metaTitleInput.value || title;
+        const summary = summaryInput.value;
+        const metaDesc = metaDescInput.value || summary;
+        const content = document.getElementById('contentEditor').value;
+        
+        let score = 0;
+        const scoreElement = document.getElementById('seoScore');
+        
+        // Title length (optimal: 50-60 chars)
+        if (metaTitle.length >= 30 && metaTitle.length <= 60) score += 25;
+        else if (metaTitle.length >= 20 && metaTitle.length < 70) score += 15;
+        
+        // Meta description length (optimal: 120-160 chars)
+        if (metaDesc.length >= 120 && metaDesc.length <= 160) score += 25;
+        else if (metaDesc.length >= 100 && metaDesc.length < 180) score += 15;
+        
+        // Content length (optimal: > 300 words)
+        const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+        if (wordCount > 500) score += 25;
+        else if (wordCount > 300) score += 15;
+        else if (wordCount > 100) score += 10;
+        
+        // Has slug
+        if (slugInput.value.trim()) score += 15;
+        
+        // Tags
+        if (tags.length > 0) score += 10;
+        
+        // Update score display
+        if (score >= 85) {
+            scoreElement.className = 'seo-score excellent';
+            scoreElement.innerHTML = '<i class="fas fa-check-circle me-1"></i>优秀 (' + score + '/100)';
+        } else if (score >= 70) {
+            scoreElement.className = 'seo-score good';
+            scoreElement.innerHTML = '<i class="fas fa-thumbs-up me-1"></i>良好 (' + score + '/100)';
+        } else if (score >= 50) {
+            scoreElement.className = 'seo-score needs-improvement';
+            scoreElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>需要优化 (' + score + '/100)';
+        } else {
+            scoreElement.className = 'seo-score poor';
+            scoreElement.innerHTML = '<i class="fas fa-times-circle me-1"></i>较差 (' + score + '/100)';
+        }
+    }
+    
+    window.updateSEOScore = updateSEOScore;
+}
+
+// Initialize form validation
+function initializeFormValidation() {
+    const form = document.getElementById('contentForm');
+    
+    form.addEventListener('submit', function(e) {
+        const action = e.submitter.value;
+        
+        if (action === 'publish') {
+            // Validate required fields for publishing
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('contentEditor').value.trim();
+            const category = document.getElementById('category').value;
+            
+            if (!title) {
+                alert('发布文章需要填写标题');
+                e.preventDefault();
+                document.getElementById('title').focus();
+                return;
+            }
+            
+            if (!content) {
+                alert('发布文章需要填写内容');
+                e.preventDefault();
+                document.getElementById('contentEditor').focus();
+                return;
+            }
+            
+            if (!category) {
+                alert('发布文章需要选择分类');
+                e.preventDefault();
+                document.getElementById('category').focus();
+                return;
+            }
+            
+            // Confirm publication
+            if (!confirm('确定要发布这篇文章吗？发布后将对所有用户可见。')) {
+                e.preventDefault();
+                return;
+            }
+        }
+        
+        // Show loading state
+        const submitBtn = e.submitter;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>处理中...';
+        submitBtn.disabled = true;
+        
+        // Re-enable button if form submission fails
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 10000);
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + S for save
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        document.querySelector('button[value="draft"]').click();
+    }
+    
+    // Ctrl/Cmd + Enter for publish
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (confirm('确定要发布这篇文章吗？')) {
+            document.querySelector('button[value="publish"]').click();
+        }
+    }
+    
+    // Ctrl/Cmd + P for preview
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        document.querySelector('button[value="preview"]').click();
+    }
+});
+
+// Initialize on page load
+window.addEventListener('beforeunload', function(e) {
+    // Warn if there are unsaved changes
+    const title = document.getElementById('title').value.trim();
+    const content = document.getElementById('contentEditor').value.trim();
+    
+    if (title || content) {
+        e.preventDefault();
+        e.returnValue = '您有未保存的更改，确定要离开吗？';
+        return e.returnValue;
+    }
+});
+</script>
+{% endblock %}

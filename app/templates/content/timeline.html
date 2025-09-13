@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}项目时间线 - 个人门户网站{% endblock %}
+{% block meta_description %}查看我的项目开发时间线，了解各个项目的发展历程和技术成长轨迹。{% endblock %}
+{% block meta_keywords %}项目时间线,开发历程,技术成长,项目管理,开发轨迹{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="bg-light py-3">
+    <div class="container">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> 首页
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('content.portfolio') }}" class="text-decoration-none">项目作品集</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">项目时间线</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="text-center mb-4">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-history text-primary"></i> 项目时间线
+                </h1>
+                <p class="lead text-muted">
+                    追溯我的技术成长足迹，见证每个项目背后的故事与成长
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {% if timeline_data %}
+    <!-- Timeline Content -->
+    <div class="row">
+        <div class="col-12">
+            <div class="timeline-container">
+                {% for year in timeline_by_year.keys() | sort(reverse=True) %}
+                {% if year != 'unknown' %}
+                <!-- Year Header -->
+                <div class="year-header mb-4">
+                    <h2 class="year-title">
+                        <span class="badge bg-primary fs-3 px-4 py-2">{{ year }}年</span>
+                    </h2>
+                </div>
+
+                <!-- Year Projects -->
+                <div class="timeline-year mb-5">
+                    {% for project in timeline_by_year[year] %}
+                    <div class="timeline-item" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
+                        <div class="timeline-marker">
+                            <div class="timeline-status timeline-status-{{ 'success' if project.status == '已完成' else 'warning' if project.status == '进行中' else 'secondary' }}">
+                                <i class="fas fa-{{ 'check' if project.status == '已完成' else 'cog fa-spin' if project.status == '进行中' else 'pause' }}"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-content">
+                            <div class="card shadow-sm h-100">
+                                {% if project.featured_image %}
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        <img src="{{ url_for('static', filename='uploads/' + project.featured_image) }}" 
+                                             class="img-fluid rounded-start h-100" alt="{{ project.title }}"
+                                             style="object-fit: cover; min-height: 200px;">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body">
+                                {% else %}
+                                <div class="card-body">
+                                {% endif %}
+                                            <!-- Project Header -->
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h5 class="card-title mb-2">
+                                                        <a href="{{ url_for('content.project_detail', id=project.id) }}" 
+                                                           class="text-decoration-none text-dark">
+                                                            {{ project.title }}
+                                                            {% if project.is_featured %}
+                                                            <i class="fas fa-star text-warning ms-1" title="精选项目"></i>
+                                                            {% endif %}
+                                                        </a>
+                                                    </h5>
+                                                    <div class="mb-2">
+                                                        <span class="badge bg-info me-2">{{ project.project_type }}</span>
+                                                        <span class="badge bg-{{ 'success' if project.status == '已完成' else 'warning' if project.status == '进行中' else 'secondary' }}">
+                                                            {{ project.status }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Project Description -->
+                                            <p class="card-text text-muted mb-3">
+                                                {{ project.description }}
+                                            </p>
+                                            
+                                            <!-- Tech Stack -->
+                                            {% if project.tech_stack %}
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block mb-1">技术栈:</small>
+                                                <div>
+                                                    {% for tech in project.tech_stack %}
+                                                    <span class="badge bg-light text-primary me-1 mb-1">{{ tech }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Timeline Info -->
+                                            <div class="row text-center mb-3">
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">开始时间</small>
+                                                    <strong>{{ moment(project.start_date).format('YYYY-MM-DD') }}</strong>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">
+                                                        {% if project.completion_date %}完成时间{% else %}持续时间{% endif %}
+                                                    </small>
+                                                    <strong>
+                                                        {% if project.completion_date %}
+                                                        {{ moment(project.completion_date).format('YYYY-MM-DD') }}
+                                                        {% else %}
+                                                        {{ project.duration_text }}
+                                                        {% endif %}
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Action Buttons -->
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ url_for('content.project_detail', id=project.id) }}" 
+                                                   class="btn btn-primary btn-sm flex-grow-1">
+                                                    <i class="fas fa-info-circle me-1"></i>查看详情
+                                                </a>
+                                                {% if project.demo_url %}
+                                                <a href="{{ project.demo_url }}" class="btn btn-outline-success btn-sm" 
+                                                   target="_blank" title="在线演示">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if project.github_url %}
+                                                <a href="{{ project.github_url }}" class="btn btn-outline-dark btn-sm" 
+                                                   target="_blank" title="查看源码">
+                                                    <i class="fab fa-github"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                {% if project.featured_image %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom CTA -->
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <div class="card bg-light border-0 py-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>有项目合作想法？
+                    </h5>
+                    <p class="card-text text-muted mb-3">
+                        如果您对我的项目经验感兴趣，或者有合作机会，欢迎联系我！
+                    </p>
+                    <div>
+                        <a href="{{ url_for('main.inquiry_form') }}" class="btn btn-primary me-2">
+                            <i class="fas fa-envelope me-1"></i>项目咨询
+                        </a>
+                        <a href="{{ url_for('content.portfolio') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-briefcase me-1"></i>查看作品集
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12 text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-calendar-plus fa-4x text-muted"></i>
+            </div>
+            <h3 class="text-muted mb-3">项目时间线即将呈现</h3>
+            <p class="text-muted mb-4">
+                精彩的项目历程正在整理中，敬请期待完整的开发时间线。
+            </p>
+            <div>
+                <a href="{{ url_for('content.portfolio') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-briefcase me-1"></i>查看项目作品集
+                </a>
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home me-1"></i>返回首页
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline-container {
+    position: relative;
+}
+
+.year-header {
+    text-align: center;
+    position: relative;
+    margin: 3rem 0 2rem 0;
+}
+
+.year-title .badge {
+    position: relative;
+    z-index: 2;
+}
+
+.year-header::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e9ecef;
+    z-index: 1;
+}
+
+.timeline-year {
+    position: relative;
+}
+
+.timeline-year::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #007bff, #6c757d);
+    z-index: 1;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 3rem;
+    margin-left: 80px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -80px;
+    top: 20px;
+    z-index: 2;
+}
+
+.timeline-status {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.timeline-status-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.timeline-status-warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+.timeline-status-secondary {
+    background: linear-gradient(135deg, #6c757d, #495057);
+}
+
+.timeline-content {
+    position: relative;
+}
+
+.timeline-content::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 40px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid #fff;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+@media (max-width: 768px) {
+    .timeline-year::before {
+        left: 15px;
+    }
+    
+    .timeline-item {
+        margin-left: 60px;
+    }
+    
+    .timeline-marker {
+        left: -60px;
+    }
+    
+    .timeline-status {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+    }
+    
+    .timeline-content::before {
+        left: -15px;
+        border-right-width: 8px;
+        border-left-width: 8px;
+        border-top-width: 8px;
+        border-bottom-width: 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    AOS.init({
+        duration: 800,
+        once: true,
+        offset: 100
+    });
+});
+</script>
+{% endblock %}

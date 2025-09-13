@@ -29,6 +29,9 @@ class ProjectInquiry(db.Model):
     client_company = db.Column(db.String(200))  # 客户公司
     client_title = db.Column(db.String(100))    # 客户职位
     
+    # 🔗 关联客户CRM系统
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), index=True)  # 关联客户ID
+    
     # 📋 项目信息
     project_type = db.Column(db.String(100), nullable=False)
     # 项目类型: 'Web开发', '移动应用', '数据分析', '平面设计', '3D建模', '其他'
@@ -56,8 +59,8 @@ class ProjectInquiry(db.Model):
     
     # 💼 项目关联
     estimated_hours = db.Column(db.Integer)  # 预估工时
-    estimated_cost = db.Column(db.Decimal(10, 2))  # 预估成本
-    actual_cost = db.Column(db.Decimal(10, 2))      # 实际成本
+    estimated_cost = db.Column(db.Float)  # 预估成本
+    actual_cost = db.Column(db.Float)      # 实际成本
     
     # 📅 时间字段
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
@@ -317,3 +320,46 @@ class ProjectInquiry(db.Model):
                           .limit(limit).all()
         
         return []
+
+
+class InquiryResponse(db.Model):
+    """
+    📝 咨询回复记录模型 - 管理咨询的回复历史
+    """
+    __tablename__ = 'inquiry_response'
+    
+    # 🆔 基础字段
+    id = db.Column(db.Integer, primary_key=True)
+    inquiry_id = db.Column(db.Integer, db.ForeignKey('project_inquiry.id'), nullable=False)
+    
+    # 📝 回复内容
+    response = db.Column(db.Text, nullable=False)
+    response_type = db.Column(db.String(50), default='email')  # 'email', 'phone', 'meeting'
+    
+    # 💰 报价信息
+    estimated_budget = db.Column(db.String(100))  # 预估报价
+    estimated_timeline = db.Column(db.String(100))  # 预估周期
+    
+    # 📅 时间管理
+    next_contact_date = db.Column(db.DateTime)  # 下次联系时间
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 👤 操作人员
+    responder_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    responder_name = db.Column(db.String(100), default='管理员')
+    
+    # 📊 状态
+    is_sent = db.Column(db.Boolean, default=False)  # 是否已发送
+    sent_at = db.Column(db.DateTime)  # 发送时间
+    
+    # 🔗 关系
+    inquiry = db.relationship('ProjectInquiry', backref='responses')
+    
+    def __repr__(self):
+        return f'<InquiryResponse {self.id}: {self.inquiry_id}>'
+    
+    def mark_as_sent(self):
+        """标记为已发送"""
+        self.is_sent = True
+        self.sent_at = datetime.utcnow()
+        db.session.commit()
