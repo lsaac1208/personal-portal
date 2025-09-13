@@ -136,21 +136,6 @@
 <!-- Content Grid -->
 <section class="py-5">
     <div class="container">
-        {% if current_tag %}
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="{{ url_for('main.index') }}">首页</a>
-                    </li>
-                    <li class="breadcrumb-item">
-                        <a href="{{ url_for('main.category', category=category) }}">{{ category }}</a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ current_tag }}</li>
-                </ol>
-            </nav>
-        </div>
-        {% endif %}
 
         <div class="content-grid">
             <div class="row g-4">

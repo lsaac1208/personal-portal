@@ -12,29 +12,6 @@
 {% endif %}
 {% endblock %}
 
-{% block breadcrumb %}
-<nav aria-label="breadcrumb" class="bg-light py-3">
-    <div class="container">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item">
-                <a href="{{ url_for('main.index') }}" class="text-decoration-none">
-                    <i class="fas fa-home"></i> 首页
-                </a>
-            </li>
-            {% if category %}
-            <li class="breadcrumb-item">
-                <a href="{{ url_for('content.all_content') }}" class="text-decoration-none">内容</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                {{ get_category_emoji(category) }} {{ category }}
-            </li>
-            {% else %}
-            <li class="breadcrumb-item active" aria-current="page">全部内容</li>
-            {% endif %}
-        </ol>
-    </div>
-</nav>
-{% endblock %}
 
 {% block content %}
 <div class="container py-5">

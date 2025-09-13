@@ -28,7 +28,7 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     
     # 📝 内容配置
-    POSTS_PER_PAGE = 10
+    POSTS_PER_PAGE = 12  # 项目展示每页12个，内容列表每页10个
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB文件上传限制
     
     # 🎨 静态文件配置
